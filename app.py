@@ -314,25 +314,29 @@ st.markdown(
     .stTextArea textarea {
         background: linear-gradient(
             180deg,
-            rgba(118, 56, 42, 0.28) 0%,
-            rgba(164, 86, 58, 0.2) 18%,
-            rgba(255, 244, 235, 0.9) 100%
+            rgba(255, 251, 246, 0.96) 0%,
+            rgba(255, 246, 239, 0.92) 42%,
+            rgba(255, 241, 231, 0.88) 100%
         ) !important;
         color: #6b3e2c !important;
         border-radius: 22px !important;
-        border: 1px solid rgba(201, 138, 104, 0.38) !important;
+        border: 1px solid rgba(225, 196, 173, 0.9) !important;
         box-shadow:
-            0 14px 28px rgba(167, 101, 67, 0.08),
-            0 0 0 1px rgba(255, 246, 239, 0.16),
-            inset 0 1px 0 rgba(255, 251, 247, 0.6),
-            inset 0 -8px 18px rgba(196, 118, 79, 0.05) !important;
+            0 10px 24px rgba(176, 128, 95, 0.08),
+            0 0 0 1px rgba(255, 248, 241, 0.45),
+            inset 0 1px 0 rgba(255, 255, 255, 0.75) !important;
         backdrop-filter: blur(14px) saturate(112%) !important;
         -webkit-backdrop-filter: blur(14px) saturate(112%) !important;
         outline: none !important;
         padding: 1rem 1.05rem !important;
     }
+    .stTextArea [data-baseweb="base-input"] > div,
     .stTextArea [data-baseweb="textarea"] {
-        background: transparent !important;
+        background: linear-gradient(
+            180deg,
+            rgba(255, 251, 246, 0.94) 0%,
+            rgba(255, 244, 236, 0.86) 100%
+        ) !important;
         border: none !important;
         box-shadow: none !important;
         border-radius: 22px !important;
@@ -341,14 +345,20 @@ st.markdown(
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
+        outline: none !important;
+        border-radius: 22px !important;
+    }
+    .stTextArea [data-testid="stTextAreaRootElement"] > div {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
     }
     .stTextArea textarea:focus {
-        border: 1px solid rgba(192, 116, 79, 0.42) !important;
+        border: 1px solid rgba(214, 175, 145, 0.96) !important;
         box-shadow:
-            0 16px 30px rgba(167, 101, 67, 0.1),
-            0 0 0 1px rgba(240, 201, 182, 0.26),
-            inset 0 1px 0 rgba(255, 251, 247, 0.68),
-            inset 0 -10px 20px rgba(191, 111, 76, 0.06) !important;
+            0 12px 28px rgba(176, 128, 95, 0.11),
+            0 0 0 2px rgba(245, 221, 202, 0.55),
+            inset 0 1px 0 rgba(255, 255, 255, 0.82) !important;
     }
     .stTextArea textarea::placeholder {
         color: rgba(137, 84, 61, 0.62) !important;
@@ -416,21 +426,27 @@ st.markdown(
         min-height: 2.3rem;
         min-width: 2.3rem;
         border-radius: 999px;
-        padding: 0 !important;
-        background: linear-gradient(180deg, rgba(255, 250, 244, 0.82) 0%, rgba(255, 244, 236, 0.72) 100%);
+        padding: 0 0.15rem !important;
+        background: linear-gradient(
+            180deg,
+            rgba(255, 251, 246, 0.92) 0%,
+            rgba(255, 244, 236, 0.84) 100%
+        );
         color: #8c5538;
-        border: 1px solid rgba(255, 255, 255, 0.38);
+        border: 1px solid rgba(226, 197, 175, 0.88);
         box-shadow:
-            0 8px 18px rgba(140, 95, 64, 0.04),
-            inset 0 1px 0 rgba(255, 255, 255, 0.32);
+            0 8px 20px rgba(163, 118, 85, 0.08),
+            0 0 0 1px rgba(255, 248, 241, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.58);
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
         font-size: 1.15rem;
         font-weight: 500;
     }
     div[data-testid="stPopover"] > button:hover {
-        background: linear-gradient(180deg, rgba(255, 247, 239, 0.9) 0%, rgba(255, 240, 230, 0.8) 100%);
+        background: linear-gradient(180deg, rgba(255, 249, 242, 0.98) 0%, rgba(255, 241, 231, 0.9) 100%);
         color: #774229;
+        border-color: rgba(214, 178, 150, 0.95);
     }
     div[data-testid="stPopoverContent"],
     div[data-baseweb="popover"],
@@ -764,6 +780,36 @@ def render_auth_screen() -> None:
         }
         div[data-testid="stForm"] input {
             color: #f7f7fb;
+        }
+        div[data-testid="stForm"] input::placeholder {
+            color: rgba(236, 228, 220, 0.62);
+        }
+        @media (prefers-color-scheme: light) {
+            div[data-testid="stForm"] [data-baseweb="input"] {
+                background: rgba(255, 250, 245, 0.96);
+                border: 1px solid rgba(219, 188, 163, 0.62);
+                box-shadow:
+                    0 8px 18px rgba(175, 129, 95, 0.08),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.68);
+            }
+            div[data-testid="stForm"] input {
+                color: #2f241d !important;
+            }
+            div[data-testid="stForm"] input::placeholder {
+                color: rgba(111, 84, 66, 0.58) !important;
+            }
+        }
+        @media (prefers-color-scheme: dark) {
+            div[data-testid="stForm"] [data-baseweb="input"] {
+                background: rgba(35, 36, 46, 0.96);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            div[data-testid="stForm"] input {
+                color: #f7f7fb !important;
+            }
+            div[data-testid="stForm"] input::placeholder {
+                color: rgba(236, 228, 220, 0.62) !important;
+            }
         }
         @media (max-width: 900px) {
             .main .block-container {
