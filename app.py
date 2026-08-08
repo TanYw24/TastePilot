@@ -387,14 +387,14 @@ st.markdown(
         border: 1px solid rgba(189, 122, 81, 0.2);
     }
     .selected-tags-label {
-        color: #fff6ee;
+        color: rgba(138, 55, 40, 0.72);
         font-weight: 600;
-        font-size: 0.95rem;
-        padding-top: 0.24rem;
-        margin-bottom: 0.4rem;
+        font-size: 0.9rem;
+        padding-top: 0.1rem;
+        margin: 0 0 0.18rem 0;
     }
     .selected-skill-row {
-        margin-bottom: 0.48rem;
+        margin-bottom: 0.2rem;
     }
     .prompt-skill-shell {
         position: relative;
@@ -450,18 +450,21 @@ st.markdown(
         line-height: 1.65;
     }
     .selected-skill-button div[data-testid="stButton"] > button {
-        min-height: 2.35rem;
-        height: 2.35rem;
+        width: 100%;
+        min-height: 2.05rem;
+        height: 2.05rem;
         border-radius: 999px;
-        padding: 0.16rem 0.9rem !important;
+        padding: 0.1rem 0.52rem !important;
         background: linear-gradient(180deg, rgba(255, 249, 242, 0.86) 0%, rgba(255, 242, 230, 0.76) 100%);
         color: #9a5931;
         border: 1px solid rgba(219, 176, 141, 0.72);
-        font-size: 0.92rem;
+        font-size: 0.84rem;
         font-weight: 600;
         box-shadow:
             0 8px 18px rgba(159, 110, 79, 0.06),
             inset 0 1px 0 rgba(255, 255, 255, 0.42);
+        overflow: hidden;
+        text-overflow: ellipsis;
         white-space: nowrap;
     }
     .selected-skill-button div[data-testid="stButton"] > button:hover {
@@ -470,7 +473,7 @@ st.markdown(
         background: linear-gradient(180deg, rgba(255, 251, 246, 0.94) 0%, rgba(255, 245, 236, 0.82) 100%);
     }
     .selected-skill-button div[data-testid="stButton"] > button p {
-        font-size: 0.92rem;
+        font-size: 0.84rem;
         line-height: 1;
     }
     .recipe-card {
@@ -1472,7 +1475,7 @@ def render_selected_skills() -> None:
         return
 
     st.markdown('<div class="selected-tags-label">已选标签：</div>', unsafe_allow_html=True)
-    row_size = 3
+    row_size = 5
     skills = st.session_state.selected_skills[:]
     for start_index in range(0, len(skills), row_size):
         row_skills = skills[start_index : start_index + row_size]
