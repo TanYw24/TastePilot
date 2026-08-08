@@ -32,7 +32,7 @@ from recommendation_tools import get_recipe_by_id, recommend_recipes
 from recommendation_tools import build_user_profile, persist_query_profile_signal
 
 
-st.set_page_config(page_title="TastePilot", layout="wide")
+st.set_page_config(page_title="TastePilot", layout="wide", initial_sidebar_state="expanded")
 
 init_db()
 
@@ -55,10 +55,21 @@ st.markdown(
         background: transparent;
     }
     [data-testid="stHeader"] {
-        display: none;
+        background: transparent !important;
     }
     [data-testid="stToolbar"] {
-        display: none;
+        display: flex !important;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 72px;
+        height: 72px;
+        z-index: 999;
+        background: transparent !important;
+        pointer-events: none;
+    }
+    [data-testid="stToolbar"] button:not([data-testid="stExpandSidebarButton"]) {
+        display: none !important;
     }
     [data-testid="stDecoration"] {
         display: none;
@@ -69,6 +80,145 @@ st.markdown(
     }
     [data-testid="stAppViewBlockContainer"] {
         padding-top: 1.35rem;
+    }
+    [data-testid="collapsedControl"],
+    [data-testid="stExpandSidebarButton"] {
+        display: flex !important;
+        position: fixed;
+        top: 1rem;
+        left: 0.9rem;
+        z-index: 1000;
+        border-radius: 999px;
+        background: linear-gradient(
+            180deg,
+            rgba(255, 251, 246, 0.96) 0%,
+            rgba(255, 242, 231, 0.9) 100%
+        ) !important;
+        border: 1px solid rgba(221, 186, 157, 0.92) !important;
+        box-shadow:
+            0 10px 22px rgba(151, 104, 71, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.72) !important;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+    [data-testid="collapsedControl"] svg,
+    [data-testid="stExpandSidebarButton"] svg {
+        fill: #8c5538 !important;
+    }
+    [data-testid="stExpandSidebarButton"] {
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        pointer-events: auto !important;
+    }
+    [data-testid="stExpandSidebarButton"] > button,
+    [data-testid="stExpandSidebarButton"] button {
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        border-radius: 999px !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        color: #8c5538 !important;
+    }
+    [data-testid="stExpandSidebarButton"] span,
+    [data-testid="stExpandSidebarButton"] svg {
+        color: #8c5538 !important;
+        fill: #8c5538 !important;
+    }
+    [data-testid="stSidebar"] {
+        background: linear-gradient(
+            180deg,
+            rgba(255, 250, 244, 0.92) 0%,
+            rgba(255, 245, 237, 0.84) 100%
+        ) !important;
+        backdrop-filter: blur(14px) saturate(112%);
+        -webkit-backdrop-filter: blur(14px) saturate(112%);
+        border-right: 1px solid rgba(255, 255, 255, 0.4);
+    }
+    [data-testid="stSidebar"] * {
+        color: #6e4531;
+    }
+    .sidebar-panel {
+        padding: 1rem 0.95rem;
+        margin: 0.35rem 0 0.8rem 0;
+        border-radius: 22px;
+        background: linear-gradient(
+            180deg,
+            rgba(255, 248, 241, 0.72) 0%,
+            rgba(255, 242, 233, 0.54) 100%
+        );
+        border: 1px solid rgba(255, 255, 255, 0.34);
+        box-shadow:
+            0 14px 28px rgba(146, 100, 70, 0.06),
+            inset 0 1px 0 rgba(255, 255, 255, 0.46);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+    .sidebar-panel h2,
+    .sidebar-panel p,
+    .sidebar-panel div,
+    .sidebar-panel span {
+        color: #6d4531;
+    }
+    [data-testid="stSidebar"] div[data-testid="stButton"] > button {
+        box-shadow:
+            0 12px 22px rgba(150, 102, 71, 0.09),
+            0 0 0 1px rgba(255, 247, 240, 0.42),
+            inset 0 1px 0 rgba(255, 255, 255, 0.44);
+    }
+    [data-testid="stSidebar"] div[data-testid="stButton"] > button:hover {
+        box-shadow:
+            0 16px 28px rgba(150, 102, 71, 0.12),
+            0 0 0 1px rgba(255, 247, 240, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+    [data-testid="stSidebar"] div[data-testid="stExpander"] details {
+        border: none !important;
+        background: transparent !important;
+    }
+    [data-testid="stSidebar"] div[data-testid="stExpander"] summary {
+        min-height: 2.45rem;
+        margin: 0.35rem 0 0.6rem 0;
+        padding: 0.48rem 0.72rem !important;
+        border-radius: 14px !important;
+        border: 1px solid rgba(232, 207, 188, 0.34) !important;
+        background: linear-gradient(
+            180deg,
+            rgba(255, 250, 244, 0.74) 0%,
+            rgba(255, 244, 236, 0.58) 100%
+        ) !important;
+        box-shadow:
+            0 12px 24px rgba(150, 102, 71, 0.1),
+            0 0 0 1px rgba(255, 248, 241, 0.34),
+            inset 0 1px 0 rgba(255, 255, 255, 0.56) !important;
+        cursor: pointer;
+        transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+    }
+    [data-testid="stSidebar"] div[data-testid="stExpander"] summary:hover {
+        transform: translateY(-1px);
+        background: linear-gradient(
+            180deg,
+            rgba(255, 252, 248, 0.82) 0%,
+            rgba(255, 247, 240, 0.66) 100%
+        ) !important;
+        box-shadow:
+            0 15px 28px rgba(150, 102, 71, 0.13),
+            0 0 0 1px rgba(255, 248, 241, 0.42),
+            inset 0 1px 0 rgba(255, 255, 255, 0.62) !important;
+    }
+    [data-testid="stSidebar"] div[data-testid="stExpander"] summary svg,
+    [data-testid="stSidebar"] div[data-testid="stExpander"] summary span,
+    [data-testid="stSidebar"] div[data-testid="stExpander"] summary p {
+        color: #6e4531 !important;
+        fill: #6e4531 !important;
+        font-weight: 600;
     }
     .main * {
         font-family: Georgia, "Times New Roman", serif;
@@ -241,10 +391,63 @@ st.markdown(
         font-weight: 600;
         font-size: 0.95rem;
         padding-top: 0.24rem;
-        margin-bottom: 0.22rem;
+        margin-bottom: 0.4rem;
     }
     .selected-skill-row {
-        margin-bottom: 0.38rem;
+        margin-bottom: 0.48rem;
+    }
+    .prompt-skill-shell {
+        position: relative;
+        margin: 0 0 0.2rem 0.72rem;
+        width: calc(100% - 1.44rem);
+        min-height: 0;
+        height: 0;
+        z-index: 3;
+        pointer-events: none;
+    }
+    .prompt-skill-toggle {
+        padding-top: 0;
+        pointer-events: auto;
+    }
+    .prompt-skill-tags {
+        padding-top: 0.08rem;
+        pointer-events: auto;
+    }
+    .st-key-prompt_skill_shell {
+        height: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        position: relative;
+        z-index: 5;
+    }
+    .st-key-prompt_skill_shell [data-testid="stHorizontalBlock"] {
+        height: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+    }
+    .st-key-prompt_actions {
+        margin-top: -4.1rem !important;
+        position: relative;
+        z-index: 2;
+    }
+    .followup-shell {
+        margin-top: 1rem;
+        margin-bottom: 0.75rem;
+    }
+    .followup-title {
+        font-size: 1.7rem;
+        font-weight: 700;
+        color: #8a3728;
+        line-height: 1.15;
+        margin-bottom: 0.32rem;
+    }
+    .followup-copy {
+        color: rgba(138, 55, 40, 0.72);
+        font-size: 1rem;
+        line-height: 1.65;
     }
     .selected-skill-button div[data-testid="stButton"] > button {
         min-height: 2.35rem;
@@ -326,7 +529,7 @@ st.markdown(
     }
     .profile-shell {
         display: grid;
-        gap: 1rem;
+        gap: 1.35rem;
     }
     .profile-lead {
         padding: 1.35rem 1.4rem;
@@ -339,11 +542,13 @@ st.markdown(
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         color: #694330;
+        margin-bottom: 0.8rem;
     }
     .profile-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 1rem;
+        gap: 1.45rem;
+        margin-top: 0.7rem;
     }
     .profile-card {
         padding: 1.15rem 1.1rem;
@@ -355,6 +560,7 @@ st.markdown(
             inset 0 1px 0 rgba(255, 255, 255, 0.28);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
+        margin-bottom: 0.1rem;
     }
     .profile-card-title {
         font-size: 1.18rem;
@@ -405,14 +611,19 @@ st.markdown(
         line-height: 1.55;
     }
     .profile-feedback-row {
-        margin-top: 0.48rem;
+        margin: 0.58rem 0 1rem 0;
     }
     .profile-feedback-row div[data-testid="stButton"] > button {
         min-height: 2rem;
         height: 2rem;
         padding: 0 0.8rem !important;
         border-radius: 999px;
-        font-size: 0.82rem;
+        font-size: 0.84rem;
+        white-space: nowrap;
+    }
+    .profile-feedback-row div[data-testid="stButton"] > button p {
+        white-space: nowrap;
+        line-height: 1;
     }
     .profile-empty {
         padding: 1.05rem 1.1rem;
@@ -462,7 +673,7 @@ st.markdown(
         backdrop-filter: blur(14px) saturate(112%) !important;
         -webkit-backdrop-filter: blur(14px) saturate(112%) !important;
         outline: none !important;
-        padding: 1rem 1.05rem !important;
+        padding: 1rem 1.05rem 3.35rem 1.05rem !important;
     }
     .stTextArea [data-baseweb="base-input"] > div,
     .stTextArea [data-baseweb="textarea"] {
@@ -556,7 +767,8 @@ st.markdown(
             0 6px 14px rgba(170, 115, 78, 0.05),
             inset 0 1px 0 rgba(255, 255, 255, 0.32);
     }
-    div[data-testid="stPopover"] > button {
+    div[data-testid="stPopover"] > button,
+    div[data-testid="stPopover"] button {
         min-height: 2.3rem;
         min-width: 2.3rem;
         border-radius: 999px;
@@ -565,9 +777,9 @@ st.markdown(
             180deg,
             rgba(255, 251, 246, 0.92) 0%,
             rgba(255, 244, 236, 0.84) 100%
-        );
-        color: #8c5538;
-        border: 1px solid rgba(226, 197, 175, 0.88);
+        ) !important;
+        color: #8c5538 !important;
+        border: 1px solid rgba(226, 197, 175, 0.88) !important;
         box-shadow:
             0 8px 20px rgba(163, 118, 85, 0.08),
             0 0 0 1px rgba(255, 248, 241, 0.4),
@@ -577,10 +789,17 @@ st.markdown(
         font-size: 1.15rem;
         font-weight: 500;
     }
-    div[data-testid="stPopover"] > button:hover {
+    div[data-testid="stPopover"] > button:hover,
+    div[data-testid="stPopover"] button:hover {
         background: linear-gradient(180deg, rgba(255, 249, 242, 0.98) 0%, rgba(255, 241, 231, 0.9) 100%);
-        color: #774229;
-        border-color: rgba(214, 178, 150, 0.95);
+        color: #774229 !important;
+        border-color: rgba(214, 178, 150, 0.95) !important;
+    }
+    div[data-testid="stPopover"] button svg,
+    div[data-testid="stPopover"] button span,
+    div[data-testid="stPopover"] button p {
+        color: #8c5538 !important;
+        fill: #8c5538 !important;
     }
     div[data-testid="stPopoverContent"],
     div[data-baseweb="popover"],
@@ -597,6 +816,54 @@ st.markdown(
             inset 0 1px 0 rgba(255, 255, 255, 0.32) !important;
         backdrop-filter: blur(20px) saturate(112%) !important;
         -webkit-backdrop-filter: blur(20px) saturate(112%) !important;
+    }
+    div[data-testid="stPopoverContent"] div[data-testid="stButton"] > button,
+    div[data-baseweb="popover"] div[data-testid="stButton"] > button,
+    div[data-testid="stPopoverContent"] button[kind],
+    div[data-baseweb="popover"] button[kind] {
+        min-height: 2.55rem;
+        border-radius: 16px !important;
+        padding: 0.2rem 0.7rem !important;
+        background: linear-gradient(
+            180deg,
+            rgba(255, 252, 248, 0.98) 0%,
+            rgba(255, 246, 238, 0.92) 100%
+        ) !important;
+        color: #7a4c33 !important;
+        border: 1px solid rgba(226, 195, 171, 0.58) !important;
+        box-shadow:
+            0 10px 20px rgba(151, 104, 71, 0.11),
+            0 0 0 1px rgba(255, 248, 241, 0.52),
+            inset 0 1px 0 rgba(255, 255, 255, 0.78) !important;
+        backdrop-filter: blur(10px) saturate(110%) !important;
+        -webkit-backdrop-filter: blur(10px) saturate(110%) !important;
+        font-size: 0.86rem !important;
+        font-weight: 600 !important;
+        white-space: normal !important;
+        line-height: 1.3 !important;
+    }
+    div[data-testid="stPopoverContent"] div[data-testid="stButton"] > button:hover,
+    div[data-baseweb="popover"] div[data-testid="stButton"] > button:hover,
+    div[data-testid="stPopoverContent"] button[kind]:hover,
+    div[data-baseweb="popover"] button[kind]:hover {
+        background: linear-gradient(
+            180deg,
+            rgba(255, 255, 252, 1) 0%,
+            rgba(255, 249, 242, 0.96) 100%
+        ) !important;
+        color: #6f4029 !important;
+        border-color: rgba(216, 176, 145, 0.72) !important;
+        box-shadow:
+            0 12px 24px rgba(151, 104, 71, 0.14),
+            0 0 0 1px rgba(255, 248, 241, 0.58),
+            inset 0 1px 0 rgba(255, 255, 255, 0.82) !important;
+    }
+    div[data-testid="stPopoverContent"] div[data-testid="stButton"] > button p,
+    div[data-baseweb="popover"] div[data-testid="stButton"] > button p,
+    div[data-testid="stPopoverContent"] button[kind] p,
+    div[data-baseweb="popover"] button[kind] p {
+        color: #7a4c33 !important;
+        line-height: 1.3 !important;
     }
     div[data-baseweb="popover"] * {
         color: #7b5037;
@@ -828,6 +1095,85 @@ def sync_login_cookie() -> None:
         st.session_state.clear_login_cookie = False
 
 
+def render_sidebar_toggle_bridge() -> None:
+    components.html(
+        """
+        <script>
+        const parentDoc = window.parent.document;
+        const BUTTON_ID = "tastepilot-sidebar-toggle";
+
+        function ensureButton() {
+          let button = parentDoc.getElementById(BUTTON_ID);
+          if (!button) {
+            button = parentDoc.createElement("button");
+            button.id = BUTTON_ID;
+            button.type = "button";
+            button.innerText = "☰";
+            Object.assign(button.style, {
+              position: "fixed",
+              top: "16px",
+              left: "14px",
+              zIndex: "1002",
+              width: "42px",
+              height: "42px",
+              borderRadius: "999px",
+              border: "1px solid rgba(221, 186, 157, 0.92)",
+              background: "linear-gradient(180deg, rgba(255, 251, 246, 0.98) 0%, rgba(255, 242, 231, 0.92) 100%)",
+              color: "#8c5538",
+              boxShadow: "0 10px 22px rgba(151, 104, 71, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.72)",
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+              fontSize: "18px",
+              fontWeight: "600",
+              cursor: "pointer",
+              display: "none",
+              alignItems: "center",
+              justifyContent: "center",
+            });
+            button.onclick = () => {
+              const toggleButton =
+                parentDoc.querySelector('[data-testid="collapsedControl"]') ||
+                parentDoc.querySelector('[data-testid="stExpandSidebarButton"] button') ||
+                parentDoc.querySelector('[data-testid="stExpandSidebarButton"]');
+              if (toggleButton) {
+                toggleButton.click();
+              }
+            };
+            parentDoc.body.appendChild(button);
+          }
+          return button;
+        }
+
+        function syncButtonVisibility() {
+          const button = ensureButton();
+          const sidebar = parentDoc.querySelector('[data-testid="stSidebar"]');
+          const isCollapsed = sidebar && sidebar.getAttribute("aria-expanded") === "false";
+          const nativeToggle =
+            parentDoc.querySelector('[data-testid="collapsedControl"]') ||
+            parentDoc.querySelector('[data-testid="stExpandSidebarButton"]');
+          button.style.display = isCollapsed ? "flex" : "none";
+          if (nativeToggle) {
+            nativeToggle.style.display = isCollapsed ? "flex" : "";
+          }
+        }
+
+        ensureButton();
+        syncButtonVisibility();
+
+        const observer = new MutationObserver(syncButtonVisibility);
+        observer.observe(parentDoc.body, {
+          subtree: true,
+          attributes: true,
+          childList: true,
+          attributeFilter: ["aria-expanded", "style", "class"],
+        });
+        window.addEventListener("beforeunload", () => observer.disconnect(), { once: true });
+        </script>
+        """,
+        height=0,
+    )
+
+
 def restore_login_session() -> None:
     if st.session_state.user is not None:
         return
@@ -926,7 +1272,6 @@ def logout() -> None:
     st.session_state.preference_notice = ""
     st.session_state.profile_notice = ""
     st.session_state.current_page = "recommend"
-    st.rerun()
 
 
 def apply_skill(skill_name: str) -> None:
@@ -1019,7 +1364,8 @@ def render_profile_module(title: str, description: str, items: list[dict], profi
             """,
             unsafe_allow_html=True,
         )
-        feedback_cols = st.columns([1, 1, 3], gap="small")
+        st.markdown('<div class="profile-feedback-row">', unsafe_allow_html=True)
+        feedback_cols = st.columns([1.25, 1.25], gap="medium")
         with feedback_cols[0]:
             if st.button("更像我", key=f"profile_confirm_{profile_type}_{item['label']}", use_container_width=True):
                 submit_profile_feedback(profile_type, item["label"], "confirm")
@@ -1028,7 +1374,7 @@ def render_profile_module(title: str, description: str, items: list[dict], profi
             if st.button("不太准", key=f"profile_downvote_{profile_type}_{item['label']}", use_container_width=True):
                 submit_profile_feedback(profile_type, item["label"], "downvote")
                 st.rerun()
-        st.markdown('<div class="profile-feedback-row"></div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -1123,17 +1469,15 @@ def get_dynamic_skill_groups() -> tuple[str, list[tuple[str, list[tuple[str, str
 
 def render_selected_skills() -> None:
     if not st.session_state.selected_skills:
-        st.write("")
         return
 
     st.markdown('<div class="selected-tags-label">已选标签：</div>', unsafe_allow_html=True)
-    row_size = 5
+    row_size = 3
     skills = st.session_state.selected_skills[:]
     for start_index in range(0, len(skills), row_size):
         row_skills = skills[start_index : start_index + row_size]
         st.markdown('<div class="selected-skill-row">', unsafe_allow_html=True)
-        column_weights = [max(1.0, len(skill_name) * 0.55 + 1.4) for skill_name in row_skills]
-        pill_cols = st.columns(column_weights, gap="small")
+        pill_cols = st.columns(row_size, gap="small")
         for idx, skill_name in enumerate(row_skills):
             with pill_cols[idx]:
                 st.markdown('<div class="selected-skill-button">', unsafe_allow_html=True)
@@ -1147,6 +1491,92 @@ def render_selected_skills() -> None:
                 )
                 st.markdown("</div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_prompt_tool_button_bridge() -> None:
+    components.html(
+        """
+        <script>
+        const parentDoc = window.parent.document;
+        let promptToolButtonFrame = null;
+
+        function placePromptToolButton() {
+          const textarea = parentDoc.querySelector('.stTextArea textarea');
+          const plusButton = Array.from(parentDoc.querySelectorAll('[data-testid="stPopoverButton"]'))
+            .find((button) => button.textContent && button.textContent.includes('＋'));
+          if (!textarea || !plusButton) {
+            return;
+          }
+
+          const rect = textarea.getBoundingClientRect();
+          const popoverShell = plusButton.closest('[data-testid="stPopover"]');
+          const buttonParent = plusButton.parentElement;
+          const originalRow = plusButton.closest('[data-testid="stHorizontalBlock"]');
+          const narrowStyles = {
+            width: '40px',
+            minWidth: '40px',
+            maxWidth: '40px',
+            height: '40px',
+            minHeight: '40px',
+            maxHeight: '40px',
+          };
+          [popoverShell, buttonParent].forEach((element) => {
+            if (!element) {
+              return;
+            }
+            Object.assign(element.style, {
+              ...narrowStyles,
+              display: 'block',
+              flex: '0 0 40px',
+              margin: '0',
+            });
+          });
+          if (originalRow) {
+            Object.assign(originalRow.style, {
+              height: '0',
+              minHeight: '0',
+              margin: '0',
+              overflow: 'visible',
+            });
+          }
+          Object.assign(plusButton.style, {
+            position: 'fixed',
+            left: `${rect.left + 14}px`,
+            top: `${rect.bottom - 50}px`,
+            ...narrowStyles,
+            zIndex: '1001',
+            margin: '0',
+            padding: '0',
+          });
+        }
+
+        function schedulePromptToolButtonPlacement() {
+          if (promptToolButtonFrame) {
+            window.parent.cancelAnimationFrame(promptToolButtonFrame);
+          }
+          promptToolButtonFrame = window.parent.requestAnimationFrame(() => {
+            placePromptToolButton();
+            window.parent.setTimeout(placePromptToolButton, 120);
+            window.parent.setTimeout(placePromptToolButton, 280);
+            window.parent.setTimeout(placePromptToolButton, 520);
+          });
+        }
+
+        schedulePromptToolButtonPlacement();
+        window.parent.addEventListener('resize', schedulePromptToolButtonPlacement);
+        window.parent.addEventListener('scroll', schedulePromptToolButtonPlacement, true);
+
+        const observer = new MutationObserver(schedulePromptToolButtonPlacement);
+        observer.observe(parentDoc.body, { subtree: true, childList: true, attributes: true });
+        window.addEventListener('beforeunload', () => {
+          observer.disconnect();
+          window.parent.removeEventListener('resize', schedulePromptToolButtonPlacement);
+          window.parent.removeEventListener('scroll', schedulePromptToolButtonPlacement, true);
+        }, { once: true });
+        </script>
+        """,
+        height=0,
+    )
 
 
 def render_auth_screen() -> None:
@@ -1234,17 +1664,25 @@ def render_auth_screen() -> None:
                 color: rgba(236, 228, 220, 0.62) !important;
             }
         }
-        .password-row-label {
+        .password-row-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
             margin-bottom: 0.35rem;
+        }
+        .password-row-label {
             color: #2f3240;
             font-size: 1rem;
             font-weight: 600;
+            margin: 0;
         }
         .reset-link-note {
             display: flex;
             justify-content: flex-end;
             align-items: center;
             min-height: 100%;
+            margin: 0;
         }
         .reset-link-note a,
         .auth-inline-link a {
@@ -1313,15 +1751,16 @@ def render_auth_screen() -> None:
             st.caption("已经有账号了，直接回来继续选菜。")
             with st.form("login_form", clear_on_submit=False):
                 email = st.text_input("邮箱", placeholder="you@example.com")
-                st.markdown('<div class="password-row-label">密码</div>', unsafe_allow_html=True)
-                password_col, reset_col = st.columns([0.86, 0.14], gap="small")
-                with password_col:
-                    password = st.text_input("密码", type="password", label_visibility="collapsed")
-                with reset_col:
-                    st.markdown(
-                        '<div class="reset-link-note"><a href="?auth_mode=forgot_password" target="_self">忘记密码？</a></div>',
-                        unsafe_allow_html=True,
-                    )
+                st.markdown(
+                    """
+                    <div class="password-row-head">
+                        <div class="password-row-label">密码</div>
+                        <div class="reset-link-note"><a href="?auth_mode=forgot_password" target="_self">忘记密码？</a></div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                password = st.text_input("密码", type="password", label_visibility="collapsed")
                 login_submitted = st.form_submit_button("登录并进入", use_container_width=True)
             if login_submitted:
                 user = authenticate_user(email.strip(), password)
@@ -1738,38 +2177,57 @@ def render_input_area(preferences: dict) -> None:
         label_visibility="collapsed",
     )
 
-    picker_col, selected_col = st.columns([0.12, 0.88], gap="small")
-    with picker_col:
-        with st.popover("＋"):
-            for group_name, group_skills in active_skill_groups:
-                st.markdown(
-                    f'<div class="skill-section"><div class="skill-group-label">{group_name}</div></div>',
-                    unsafe_allow_html=True,
-                )
-                cols = st.columns(3)
-                for index, (skill_name, skill_desc) in enumerate(group_skills):
-                    with cols[index % 3]:
-                        st.button(
-                            skill_name,
-                            key=f"skill_{skill_name}",
-                            help=skill_desc,
-                            on_click=apply_skill,
-                            args=(skill_name,),
-                            use_container_width=True,
-                        )
+    with st.container(key="prompt_skill_shell"):
+        picker_col, selected_col = st.columns([0.095, 0.905], gap="small")
+        with picker_col:
+            st.markdown('<div class="prompt-skill-toggle">', unsafe_allow_html=True)
+            with st.popover("＋"):
+                for group_name, group_skills in active_skill_groups:
+                    st.markdown(
+                        f'<div class="skill-section"><div class="skill-group-label">{group_name}</div></div>',
+                        unsafe_allow_html=True,
+                    )
+                    cols = st.columns(3)
+                    for index, (skill_name, skill_desc) in enumerate(group_skills):
+                        with cols[index % 3]:
+                            st.button(
+                                skill_name,
+                                key=f"skill_{skill_name}",
+                                help=skill_desc,
+                                on_click=apply_skill,
+                                args=(skill_name,),
+                                use_container_width=True,
+                            )
+            st.markdown("</div>", unsafe_allow_html=True)
 
-    with selected_col:
-        render_selected_skills()
+        with selected_col:
+            st.markdown('<div class="prompt-skill-tags">', unsafe_allow_html=True)
+            render_selected_skills()
+            st.markdown("</div>", unsafe_allow_html=True)
+    render_prompt_tool_button_bridge()
 
-    action_col1, action_col2, action_col3 = st.columns([1.2, 1.1, 0.9])
-    with action_col1:
-        if st.button("立即推荐今晚吃什么", type="primary", use_container_width=True):
-            run_recommendation(preferences)
-    with action_col2:
-        if st.button("换一批候选菜", use_container_width=True):
-            run_recommendation(preferences, replace_mode=True)
-    with action_col3:
-        st.button("清空", on_click=clear_prompt, use_container_width=True)
+    has_recommendations = bool(st.session_state.recommendations)
+    with st.container(key="prompt_actions"):
+        if has_recommendations:
+            action_col1, action_col2, action_col3 = st.columns([1.2, 1.1, 0.9])
+            with action_col1:
+                if st.button("立即推荐菜谱", type="primary", use_container_width=True):
+                    run_recommendation(preferences)
+                    st.rerun()
+            with action_col2:
+                if st.button("换一批候选菜", use_container_width=True):
+                    run_recommendation(preferences, replace_mode=True)
+                    st.rerun()
+            with action_col3:
+                st.button("清空", on_click=clear_prompt, use_container_width=True)
+        else:
+            action_col1, action_col2 = st.columns([1.3, 0.95])
+            with action_col1:
+                if st.button("立即推荐菜谱", type="primary", use_container_width=True):
+                    run_recommendation(preferences)
+                    st.rerun()
+            with action_col2:
+                st.button("清空", on_click=clear_prompt, use_container_width=True)
 
     parsed = (
         parse_free_text_request(st.session_state.prompt_text_input)
@@ -1793,7 +2251,7 @@ def render_recipe_cards() -> None:
     if not recommendations:
         return
 
-    st.subheader("今晚先看这 3 个")
+    st.markdown('<div class="followup-title">今晚先看这 3 个</div>', unsafe_allow_html=True)
     for recipe in recommendations:
         st.markdown(
             f"""
@@ -1826,20 +2284,29 @@ def render_follow_up_actions(preferences: dict) -> None:
     if not st.session_state.recommendations:
         return
 
-    st.subheader("还想再收窄一点吗")
-    st.write("如果这 3 个里还没有特别心动的，我们可以继续往前推一步。")
+    st.markdown(
+        """
+        <div class="followup-shell">
+            <div class="followup-title">还想再收窄一点吗</div>
+            <div class="followup-copy">如果这 3 个里还没有特别心动的，我们可以继续往前推一步。</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     follow_up_actions = get_follow_up_actions()
     cols = st.columns(len(follow_up_actions))
     for index, (label, skill) in enumerate(follow_up_actions):
         with cols[index]:
             if st.button(label, key=f"followup_{skill}_{index}", use_container_width=True):
                 run_recommendation(preferences, append_skill=skill)
+                st.rerun()
 
 
 def main() -> None:
     sync_auth_mode_from_query()
     restore_login_session()
     sync_login_cookie()
+    render_sidebar_toggle_bridge()
 
     if st.session_state.user is None:
         render_auth_screen()
