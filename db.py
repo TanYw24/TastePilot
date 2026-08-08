@@ -209,6 +209,38 @@ def get_user_action_counts(user_id: int, action_type: str) -> dict[int, int]:
     return {row["recipe_id"]: row["count"] for row in rows}
 
 
+def get_action_totals(user_id: int) -> dict[str, int]:
+    with get_connection() as connection:
+        rows = connection.execute(
+            """
+            SELECT action_type, COUNT(*) AS count
+            FROM user_actions
+            WHERE user_id = ?
+            GROUP BY action_type
+            """,
+            (user_id,),
+        ).fetchall()
+
+    return {row["action_type"]: row["count"] for row in rows}
+
+
+def get_recent_recipe_actions(user_id: int, action_type: str, limit: int = 5) -> list[dict]:
+    with get_connection() as connection:
+        rows = connection.execute(
+            """
+            SELECT recipe_id, action_type, MAX(created_at) AS created_at, MAX(id) AS latest_id
+            FROM user_actions
+            WHERE user_id = ? AND action_type = ?
+            GROUP BY recipe_id, action_type
+            ORDER BY latest_id DESC
+            LIMIT ?
+            """,
+            (user_id, action_type, limit),
+        ).fetchall()
+
+    return [dict(row) for row in rows]
+
+
 def get_preference_summary(preferences: dict) -> list[str]:
     summary = []
     flavors = preferences.get("favorite_flavors", "")

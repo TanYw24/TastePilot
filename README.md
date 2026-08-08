@@ -130,6 +130,8 @@ DataPilot/
 - `id`
 - `name`
 - `cuisine`
+- `staple_category`
+- `cuisine_group`
 - `flavor_tags`
 - `scene_tags`
 - `diet_tags`
@@ -145,6 +147,8 @@ DataPilot/
 
 其中：
 
+- `staple_category` 用于描述菜品形态，例如饭类、面类、粉类、饼类、锅物、甜品、饮品
+- `cuisine_group` 用于描述归一化后的菜系，例如中式家常、川渝湘辣、粤港风味、日式、韩式、西式
 - `flavor_tags` 用于描述口味，例如鲜香、清淡、奶香
 - `scene_tags` 用于描述使用场景，例如一个人吃、下午茶、朋友聚餐
 - `feature_tags` 用于描述强特征，例如正餐、饮品、甜品、快手、治愈、仪式感

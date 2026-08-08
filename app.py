@@ -7,8 +7,10 @@ from agent import parse_free_text_request
 from db import (
     authenticate_user,
     create_user,
+    get_action_totals,
     get_favorite_recipes,
     get_preference_summary,
+    get_recent_recipe_actions,
     get_user_preferences,
     init_db,
     record_action,
@@ -210,29 +212,31 @@ st.markdown(
         margin-bottom: 0.22rem;
     }
     .selected-skill-row {
-        margin-bottom: 0.3rem;
-    }
-    .selected-skill-cell {
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.38rem;
     }
     .selected-skill-button div[data-testid="stButton"] > button {
-        min-height: 2.1rem;
-        height: 2.1rem;
+        min-height: 2.35rem;
+        height: 2.35rem;
         border-radius: 999px;
-        padding: 0.16rem 0.75rem !important;
-        background: linear-gradient(180deg, rgba(255, 248, 240, 0.8) 0%, rgba(255, 243, 234, 0.7) 100%);
-        color: #a45b31;
-        border: 1px solid rgba(220, 167, 132, 0.38);
-        font-size: 0.8rem;
+        padding: 0.16rem 0.9rem !important;
+        background: linear-gradient(180deg, rgba(255, 249, 242, 0.86) 0%, rgba(255, 242, 230, 0.76) 100%);
+        color: #9a5931;
+        border: 1px solid rgba(219, 176, 141, 0.72);
+        font-size: 0.92rem;
         font-weight: 600;
         box-shadow:
-            0 8px 18px rgba(159, 110, 79, 0.04),
-            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            0 8px 18px rgba(159, 110, 79, 0.06),
+            inset 0 1px 0 rgba(255, 255, 255, 0.42);
+        white-space: nowrap;
     }
     .selected-skill-button div[data-testid="stButton"] > button:hover {
-        color: #8f4a24;
-        border-color: rgba(208, 148, 108, 0.48);
-        background: linear-gradient(180deg, rgba(255, 250, 244, 0.88) 0%, rgba(255, 244, 236, 0.78) 100%);
+        color: #87471f;
+        border-color: rgba(205, 154, 116, 0.84);
+        background: linear-gradient(180deg, rgba(255, 251, 246, 0.94) 0%, rgba(255, 245, 236, 0.82) 100%);
+    }
+    .selected-skill-button div[data-testid="stButton"] > button p {
+        font-size: 0.92rem;
+        line-height: 1;
     }
     .recipe-card {
         padding: 1.1rem 1.1rem;
@@ -608,6 +612,8 @@ if "excluded_recipe_ids" not in st.session_state:
     st.session_state.excluded_recipe_ids = []
 if "auth_mode" not in st.session_state:
     st.session_state.auth_mode = "login"
+if "sync_prompt_input" not in st.session_state:
+    st.session_state.sync_prompt_input = False
 
 
 def render_tag_pills(tags: list[str]) -> str:
@@ -634,6 +640,7 @@ def apply_skill(skill_name: str) -> None:
     if snippet not in st.session_state.prompt_text:
         separator = "，" if st.session_state.prompt_text.strip() else ""
         st.session_state.prompt_text = f"{st.session_state.prompt_text}{separator}{snippet}"
+        st.session_state.sync_prompt_input = True
 
 
 def remove_skill(skill_name: str) -> None:
@@ -649,6 +656,7 @@ def remove_skill(skill_name: str) -> None:
             text = text.replace(snippet, "")
             text = text.replace("，，", "，").strip("， ")
             st.session_state[key] = text
+    st.session_state.sync_prompt_input = True
 
 
 def clear_prompt() -> None:
@@ -658,6 +666,7 @@ def clear_prompt() -> None:
     st.session_state.recommendations = []
     st.session_state.last_query = {}
     st.session_state.excluded_recipe_ids = []
+    st.session_state.sync_prompt_input = False
 
 
 def get_dynamic_skill_groups() -> tuple[str, list[tuple[str, list[tuple[str, str]]]]]:
@@ -684,22 +693,19 @@ def render_selected_skills() -> None:
     for start_index in range(0, len(skills), row_size):
         row_skills = skills[start_index : start_index + row_size]
         st.markdown('<div class="selected-skill-row">', unsafe_allow_html=True)
-        pill_cols = st.columns(row_size, gap="small")
+        column_weights = [max(1.0, len(skill_name) * 0.55 + 1.4) for skill_name in row_skills]
+        pill_cols = st.columns(column_weights, gap="small")
         for idx, skill_name in enumerate(row_skills):
             with pill_cols[idx]:
-                st.markdown('<div class="selected-skill-slot">', unsafe_allow_html=True)
-                pill_inner_cols = st.columns([8.8, 1.2], gap="small")
-                with pill_inner_cols[0]:
-                    st.markdown(f'<div class="selected-skill-pill">{skill_name}</div>', unsafe_allow_html=True)
-                with pill_inner_cols[1]:
-                    st.markdown('<div class="selected-skill-close">', unsafe_allow_html=True)
-                    st.button(
-                        "×",
-                        key=f"remove_skill_{start_index}_{idx}_{skill_name}",
-                        on_click=remove_skill,
-                        args=(skill_name,),
-                    )
-                    st.markdown("</div>", unsafe_allow_html=True)
+                st.markdown('<div class="selected-skill-button">', unsafe_allow_html=True)
+                button_label = f"{skill_name} ×"
+                st.button(
+                    button_label,
+                    key=f"remove_skill_{start_index}_{idx}_{skill_name}",
+                    on_click=remove_skill,
+                    args=(skill_name,),
+                    use_container_width=True,
+                )
                 st.markdown("</div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -838,9 +844,27 @@ def render_auth_screen() -> None:
 
 def render_sidebar(preferences: dict) -> None:
     with st.sidebar:
+        user_id = st.session_state.user["id"]
+        action_totals = get_action_totals(user_id)
+        recent_views = get_recent_recipe_actions(user_id, "view", limit=5)
+        recent_skips = get_recent_recipe_actions(user_id, "skip", limit=5)
+
         st.markdown(f"## 欢迎你，{st.session_state.user['nickname']}")
         st.write(st.session_state.user["email"])
         st.button("退出登录", on_click=logout, use_container_width=True)
+        st.markdown("---")
+        st.markdown("## 这阵子的口味轨迹")
+        view_total = action_totals.get("view", 0)
+        favorite_total = action_totals.get("favorite", 0)
+        skip_total = action_totals.get("skip", 0)
+        st.caption(f"最近一共看过 {view_total} 次，收藏 {favorite_total} 次，跳过 {skip_total} 次。")
+        if favorite_total > skip_total and favorite_total > 0:
+            st.write("今天的 TastePilot 记忆更偏向你喜欢的方向。")
+        elif skip_total > favorite_total and skip_total > 0:
+            st.write("你这阵子在认真排除不想吃的类型，推荐会继续收窄。")
+        else:
+            st.write("再多选几轮，我会更快摸准你现在的口味。")
+
         st.markdown("---")
         st.markdown("## 长期偏好")
         summary_lines = get_preference_summary(preferences)
@@ -883,7 +907,7 @@ def render_sidebar(preferences: dict) -> None:
                 st.success("偏好已更新。")
 
         st.markdown("---")
-        favorites = get_favorite_recipes(st.session_state.user["id"])
+        favorites = get_favorite_recipes(user_id)
         st.markdown("## 我的收藏")
         if not favorites:
             st.write("还没有收藏。")
@@ -892,6 +916,25 @@ def render_sidebar(preferences: dict) -> None:
                 recipe = get_recipe_by_id(recipe_id)
                 if recipe:
                     st.write(f"• {recipe['name']}")
+
+        st.markdown("---")
+        st.markdown("## 最近看过")
+        if not recent_views:
+            st.write("还没有浏览记录。")
+        else:
+            for item in recent_views:
+                recipe = get_recipe_by_id(item["recipe_id"])
+                if recipe:
+                    st.write(f"• {recipe['name']}")
+
+        with st.expander("最近跳过了什么", expanded=False):
+            if not recent_skips:
+                st.write("还没有跳过记录。")
+            else:
+                for item in recent_skips:
+                    recipe = get_recipe_by_id(item["recipe_id"])
+                    if recipe:
+                        st.write(f"• {recipe['name']}")
 
 
 def build_query_from_prompt(preferences: dict, prompt_override: str | None = None) -> tuple[dict, dict]:
@@ -907,6 +950,7 @@ def build_query_from_prompt(preferences: dict, prompt_override: str | None = Non
     query = {
         "scene": parsed.get("scene", ""),
         "favorite_flavors": preferred_flavors,
+        "required_flavors": parsed.get("required_flavors", []),
         "diet_goal": parsed.get("diet_goal", ""),
         "budget_level": parsed.get("budget_level", preferences.get("budget_level", "中等预算")),
         "cooking_time_limit": parsed.get("cooking_time_limit", preferences.get("cooking_time_limit", "30 分钟内")),
@@ -918,6 +962,9 @@ def build_query_from_prompt(preferences: dict, prompt_override: str | None = Non
         "avoid_course_types": parsed.get("avoid_course_types", []),
         "intent_tags": parsed.get("intent_tags", []),
         "mood_search_tags": parsed.get("mood_search_tags", []),
+        "beverage_categories": parsed.get("beverage_categories", []),
+        "solar_terms": parsed.get("solar_terms", []),
+        "cuisine_groups": parsed.get("cuisine_groups", []),
         "primary_bucket": parsed.get("primary_bucket"),
         "mood_bucket": parsed.get("mood_bucket"),
         "mood_detected": parsed.get("mood_detected"),
@@ -1046,8 +1093,9 @@ def get_follow_up_actions() -> list[tuple[str, str]]:
 
 def render_input_area(preferences: dict) -> None:
     time_label, active_skill_groups = get_dynamic_skill_groups()
-    if st.session_state.prompt_text_input != st.session_state.prompt_text:
+    if st.session_state.sync_prompt_input:
         st.session_state.prompt_text_input = st.session_state.prompt_text
+        st.session_state.sync_prompt_input = False
 
     st.markdown(
         """

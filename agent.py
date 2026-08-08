@@ -1,4 +1,30 @@
 NEGATION_MARKERS = ["不想吃", "不要", "不吃", "别", "避开", "去掉"]
+SOLAR_TERM_GROUPS = {
+    "立春": ["立春", "春季时令", "咬春"],
+    "雨水": ["雨水", "春季时令", "润燥"],
+    "惊蛰": ["惊蛰", "春季时令", "清润"],
+    "春分": ["春分", "春季时令", "平衡"],
+    "清明": ["清明", "春季时令", "清明时令"],
+    "谷雨": ["谷雨", "春季时令", "鲜嫩"],
+    "立夏": ["立夏", "夏季时令", "补夏"],
+    "小满": ["小满", "夏季时令", "清爽"],
+    "芒种": ["芒种", "夏季时令", "青梅"],
+    "夏至": ["夏至", "夏季时令", "凉爽"],
+    "小暑": ["小暑", "夏季时令", "消暑"],
+    "大暑": ["大暑", "夏季时令", "消暑"],
+    "立秋": ["立秋", "秋季时令", "咬秋"],
+    "处暑": ["处暑", "秋季时令", "润燥"],
+    "白露": ["白露", "秋季时令", "润肺"],
+    "秋分": ["秋分", "秋季时令", "秋菜"],
+    "寒露": ["寒露", "秋季时令", "润燥"],
+    "霜降": ["霜降", "秋季时令", "补秋"],
+    "立冬": ["立冬", "冬季时令", "补冬"],
+    "小雪": ["小雪", "冬季时令", "软糯"],
+    "大雪": ["大雪", "冬季时令", "进补"],
+    "冬至": ["冬至", "冬季时令", "团圆"],
+    "小寒": ["小寒", "冬季时令", "暖胃"],
+    "大寒": ["大寒", "冬季时令", "迎年"],
+}
 
 
 def _is_negated_at(text: str, index: int) -> bool:
@@ -21,6 +47,24 @@ def _any_positive_keyword(text: str, keywords: list[str]) -> bool:
     return any(_has_positive_keyword(text, keyword) for keyword in keywords)
 
 
+def _detect_required_flavors(text: str, flavors: list[str]) -> list[str]:
+    combo_rules = [
+        (["酸辣", "又酸又辣", "酸辣口", "酸一点辣一点", "又酸辣又开胃"], ["酸甜", "香辣"]),
+        (["麻辣", "又麻又辣", "麻麻辣辣"], ["香辣", "重口"]),
+        (["甜辣", "甜甜辣辣", "又甜又辣"], ["甜香", "香辣"]),
+        (["酸甜辣", "又酸又甜又辣", "酸甜口又辣"], ["酸甜", "甜香", "香辣"]),
+        (["咸甜", "甜咸", "又咸又甜"], ["咸香", "甜香"]),
+        (["奶香咖啡", "奶咖", "奶味咖啡"], ["奶香", "苦香"]),
+        (["苦甜", "先苦后甜", "微苦回甜"], ["苦香", "甜香"]),
+    ]
+
+    required = []
+    for markers, needed_flavors in combo_rules:
+        if any(marker in text for marker in markers):
+            required.extend(needed_flavors)
+    return list(dict.fromkeys(required))
+
+
 def _base_parse(user_text: str) -> dict:
     text = user_text.strip().replace(" ", "")
     if not text:
@@ -37,6 +81,7 @@ def _base_parse(user_text: str) -> dict:
             "辣": "香辣",
             "麻辣": "香辣",
             "酸甜": "酸甜",
+            "酸": "酸甜",
             "清淡": "清淡",
             "清爽": "清淡",
             "爽口": "清淡",
@@ -50,6 +95,7 @@ def _base_parse(user_text: str) -> dict:
             "奶香": "奶香",
             "果香": "果香",
             "咸": "咸香",
+            "苦": "苦香",
         },
         "diet_goal": {
             "减脂": "减脂清爽",
@@ -119,12 +165,18 @@ def _base_parse(user_text: str) -> dict:
                 break
 
     colloquial_flavor_phrases = {
+        "酸一点": "酸甜",
+        "酸口": "酸甜",
+        "带点酸": "酸甜",
         "香一点": "鲜香",
         "香香的": "鲜香",
         "够味": "重口",
         "有味道": "鲜香",
         "有满足感": "重口",
         "满足一点": "重口",
+        "苦一点": "苦香",
+        "微苦": "苦香",
+        "回甘": "苦香",
         "不腻": "清淡",
         "别太腻": "清淡",
         "轻一点": "清淡",
@@ -135,6 +187,15 @@ def _base_parse(user_text: str) -> dict:
     for phrase, mapped_flavor in colloquial_flavor_phrases.items():
         if _has_positive_keyword(text, phrase):
             add_flavor(result, mapped_flavor)
+
+    result["required_flavors"] = _detect_required_flavors(text, result["favorite_flavors"])
+    for flavor in result["required_flavors"]:
+        if flavor not in result["favorite_flavors"]:
+            result["favorite_flavors"].append(flavor)
+        if flavor not in result["recognized_hints"]:
+            result["recognized_hints"].append(flavor)
+    if result["required_flavors"]:
+        result["recognized_hints"].append("需要同时满足 " + " + ".join(result["required_flavors"]))
 
     if _has_positive_keyword(text, "仪式感") and "高预算" not in result.get("recognized_hints", []):
         result["recognized_hints"].append("仪式感")
@@ -198,6 +259,9 @@ def analyze_dining_request(user_text: str) -> dict:
     avoid_course_types = result.get("avoid_course_types", [])
     intent_tags = []
     primary_bucket = None
+    beverage_categories = []
+    solar_terms = []
+    cuisine_groups = []
 
     savory_markers = ["咸", "咸口", "正餐", "主食", "吃饭", "饭", "面", "盖饭", "热菜", "锅气"]
     sweet_markers = ["甜", "甜品", "蛋糕", "布丁", "小蛋糕", "甜点", "甜口"]
@@ -254,6 +318,57 @@ def analyze_dining_request(user_text: str) -> dict:
 
     explicit_drink_request = _any_positive_keyword(text, drink_markers)
     explicit_dessert_request = _any_positive_keyword(text, dessert_markers + sweet_markers)
+    savory_sweet_combo_request = any(
+        marker in text for marker in ["甜辣", "酸甜辣", "咸甜", "甜咸", "又甜又辣", "又咸又甜"]
+    )
+
+    beverage_keyword_map = {
+        "咖啡": ["咖啡", "拿铁", "美式", "摩卡", "馥芮白", "奶咖"],
+        "奶茶": ["奶茶"],
+        "果茶": ["果茶"],
+        "茶饮": ["冷泡茶", "红茶", "绿茶", "乌龙", "茉莉茶", "茶饮"],
+        "气泡饮": ["气泡饮", "苏打", "气泡水"],
+        "奶昔": ["奶昔", "冰沙", "酸奶昔"],
+        "热饮": ["热巧克力", "热饮", "热可可", "燕麦奶"],
+    }
+    cuisine_keyword_map = {
+        "中式家常": ["中餐", "中式", "中国菜", "家常菜"],
+        "西式": ["西餐", "西式"],
+        "日式": ["日式", "日料", "日本料理"],
+        "韩式": ["韩式", "韩餐", "韩国料理"],
+        "粤港风味": ["粤式", "粤菜", "港式", "港餐"],
+        "川渝湘辣": ["川菜", "川味", "湘菜", "辣菜"],
+        "意式": ["意式", "意餐", "意大利面", "意大利菜"],
+        "东南亚风味": ["东南亚", "泰式", "泰餐"],
+        "台式风味": ["台式", "台餐"],
+        "拉美风味": ["墨西哥", "拉美"],
+        "轻食早午餐": ["轻食", "早午餐", "brunch"],
+        "甜品烘焙": ["甜品", "烘焙", "西点"],
+        "饮品特调": ["饮品", "饮料"],
+    }
+    for beverage_type, keywords in beverage_keyword_map.items():
+        if _any_positive_keyword(text, keywords):
+            beverage_categories.append(beverage_type)
+    for cuisine_group, keywords in cuisine_keyword_map.items():
+        if _any_positive_keyword(text, keywords):
+            cuisine_groups.append(cuisine_group)
+            result["recognized_hints"].append(cuisine_group)
+            intent_tags.append(cuisine_group)
+
+    for solar_term, tags in SOLAR_TERM_GROUPS.items():
+        if _has_positive_keyword(text, solar_term):
+            solar_terms.append(solar_term)
+            result["recognized_hints"].append(solar_term)
+            intent_tags.extend(tags)
+
+    if _any_positive_keyword(text, ["苦", "苦一点", "微苦", "不要太甜"]):
+        intent_tags.append("苦香")
+        if "咖啡" not in beverage_categories and explicit_drink_request:
+            beverage_categories.append("咖啡")
+        result["recognized_hints"].append("偏苦香")
+    if _any_positive_keyword(text, ["奶咖", "奶香咖啡", "奶味咖啡"]) and "奶香" not in result["favorite_flavors"]:
+        result["favorite_flavors"].append("奶香")
+        result["recognized_hints"].append("奶香")
 
     if _any_positive_keyword(text, savory_markers):
         preferred_course_types.extend(["main", "savory"])
@@ -262,7 +377,7 @@ def analyze_dining_request(user_text: str) -> dict:
         intent_tags.extend(["正餐", "咸口"])
         primary_bucket = primary_bucket or "main"
 
-    if _any_positive_keyword(text, sweet_markers):
+    if _any_positive_keyword(text, sweet_markers) and not savory_sweet_combo_request:
         preferred_course_types.extend(["dessert", "snack"])
         avoid_course_types.extend(["main"])
         result["recognized_hints"].append("偏甜点")
@@ -275,6 +390,8 @@ def analyze_dining_request(user_text: str) -> dict:
         result["recognized_hints"].append("偏饮品")
         intent_tags.append("饮品")
         primary_bucket = "drink"
+        if beverage_categories:
+            result["recognized_hints"].extend(beverage_categories)
 
     if _any_positive_keyword(text, dessert_markers):
         if "scene" not in result:
@@ -348,6 +465,7 @@ def analyze_dining_request(user_text: str) -> dict:
 
     tag_map = {
         "香辣": ["香辣", "解馋"],
+        "酸甜": ["酸甜", "清爽"],
         "清淡": ["清淡", "清爽"],
         "鲜香": ["鲜香"],
         "蒜香": ["蒜香"],
@@ -355,6 +473,7 @@ def analyze_dining_request(user_text: str) -> dict:
         "家常": ["家常"],
         "酱香": ["家常"],
         "甜香": ["甜口", "甜品"],
+        "苦香": ["苦香", "提神"],
         "奶香": ["奶香", "下午茶"],
         "果香": ["果香", "下午茶"],
         "咸香": ["咸口", "正餐"],
@@ -392,6 +511,9 @@ def analyze_dining_request(user_text: str) -> dict:
     result["preferred_course_types"] = list(dict.fromkeys(preferred_course_types))
     result["avoid_course_types"] = list(dict.fromkeys(avoid_course_types))
     result["intent_tags"] = list(dict.fromkeys(intent_tags))
+    result["beverage_categories"] = list(dict.fromkeys(beverage_categories))
+    result["solar_terms"] = list(dict.fromkeys(solar_terms))
+    result["cuisine_groups"] = list(dict.fromkeys(cuisine_groups))
     if result.get("mood_search_tags"):
         result["mood_search_tags"] = list(dict.fromkeys(result["mood_search_tags"]))
     if matched_mood:

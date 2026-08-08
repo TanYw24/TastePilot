@@ -4,8 +4,14 @@ import random
 import pandas as pd
 
 from db import get_favorite_recipes, get_user_action_counts, record_action
-
-
+from recipe_taxonomy import (
+    build_display_tags,
+    classify_beverage_category,
+    classify_staple_category,
+    get_recipe_profile_tags,
+    SOLAR_TERMS,
+    parse_tags,
+)
 DATA_PATH = Path(__file__).resolve().parent / "data" / "recipes.csv"
 _RECIPES_CACHE = None
 _BUDGET_RANK = {"低预算": 1, "中等预算": 2, "高预算": 3}
@@ -37,21 +43,13 @@ def load_recipes() -> pd.DataFrame:
     if _RECIPES_CACHE is None:
         _RECIPES_CACHE = pd.read_csv(DATA_PATH)
     return _RECIPES_CACHE.copy()
-
-
-def parse_tags(raw_value: str) -> list[str]:
-    if pd.isna(raw_value):
-        return []
-    return [item.strip() for item in str(raw_value).split("|") if item.strip()]
-
-
 def get_recipe_by_id(recipe_id: int) -> dict | None:
     recipes = load_recipes()
     match = recipes[recipes["id"] == recipe_id]
     if match.empty:
         return None
     recipe = match.iloc[0].to_dict()
-    recipe["display_tags"] = parse_tags(recipe["flavor_tags"]) + parse_tags(recipe["scene_tags"])
+    recipe["display_tags"] = build_display_tags(recipe)
     return recipe
 
 
@@ -60,11 +58,14 @@ def get_recipe_feature_tags(recipe: dict) -> list[str]:
 
 
 def get_recipe_search_tags(recipe: dict) -> list[str]:
+    beverage_category = recipe.get("beverage_category") or classify_beverage_category(recipe)
+    extra_tags = [beverage_category] if beverage_category else []
     return list(
         dict.fromkeys(
             get_recipe_feature_tags(recipe)
-            + parse_tags(recipe.get("flavor_tags", ""))
+            + get_recipe_profile_tags(recipe)
             + parse_tags(recipe.get("scene_tags", ""))
+            + extra_tags
         )
     )
 
@@ -90,6 +91,7 @@ def infer_course_types(recipe: dict) -> list[str]:
     cuisine = str(recipe.get("cuisine", ""))
     scene_tags = parse_tags(recipe.get("scene_tags", ""))
     flavor_tags = parse_tags(recipe.get("flavor_tags", ""))
+    staple_category = recipe.get("staple_category") or classify_staple_category(recipe)
 
     course_types = []
     dessert_keywords = ["蛋糕", "布丁", "甜品", "派", "司康", "奶冻", "千层", "甘露", "盒子", "糯米饭"]
@@ -97,13 +99,17 @@ def infer_course_types(recipe: dict) -> list[str]:
     light_keywords = ["沙拉", "藜麦", "吐司", "酸奶杯"]
     savory_keywords = ["饭", "面", "锅", "汤", "豆腐", "牛肉", "鸡翅", "乌冬"]
 
-    if "下午茶" in scene_tags or "甜品" in cuisine or "烘焙" in cuisine or any(keyword in name for keyword in dessert_keywords):
+    if staple_category == "甜品" or "下午茶" in scene_tags or "甜品" in cuisine or "烘焙" in cuisine or any(
+        keyword in name for keyword in dessert_keywords
+    ):
         course_types.append("dessert")
-    if any(keyword in name for keyword in drink_keywords):
+    if staple_category == "饮品" or any(keyword in name for keyword in drink_keywords):
         course_types.append("drink")
-    if any(keyword in name for keyword in light_keywords):
+    if staple_category == "轻食" or any(keyword in name for keyword in light_keywords):
         course_types.append("light_meal")
-    if any(keyword in name for keyword in savory_keywords) or "下饭解馋" in parse_tags(recipe.get("diet_tags", "")):
+    if staple_category in {"饭类", "面类", "粉类", "饼类", "锅物", "汤粥", "面包三明治", "菜肴"} or any(
+        keyword in name for keyword in savory_keywords
+    ) or "下饭解馋" in parse_tags(recipe.get("diet_tags", "")):
         course_types.extend(["main", "savory"])
     if "甜香" in flavor_tags or "奶香" in flavor_tags or "果香" in flavor_tags:
         course_types.append("sweet")
@@ -123,6 +129,7 @@ def _merge_preference_query(query: dict, preferences: dict) -> dict:
             + query.get("favorite_flavors", [])
         )
     )
+    merged["required_flavors"] = query.get("required_flavors", [])
     merged["disliked_ingredients"] = "、".join(
         filter(None, [preferences.get("disliked_ingredients", ""), query.get("disliked_ingredients", "")])
     )
@@ -142,6 +149,9 @@ def _merge_preference_query(query: dict, preferences: dict) -> dict:
     merged["primary_bucket"] = query.get("primary_bucket")
     merged["mood_bucket"] = query.get("mood_bucket")
     merged["mood_detected"] = query.get("mood_detected")
+    merged["beverage_categories"] = query.get("beverage_categories", [])
+    merged["solar_terms"] = query.get("solar_terms", [])
+    merged["cuisine_groups"] = query.get("cuisine_groups", [])
     return merged
 
 
@@ -168,12 +178,13 @@ def _contains_any_avoids(ingredients: str, disliked_ingredients: str) -> bool:
 def _score_recipe(recipe: dict, request: dict, favorite_counts: dict, skip_counts: dict) -> tuple[int, list[str]]:
     score = 0
     reasons = []
-    recipe_flavors = parse_tags(recipe["flavor_tags"])
+    recipe_flavors = get_recipe_profile_tags(recipe)
     recipe_scenes = parse_tags(recipe["scene_tags"])
     recipe_diets = parse_tags(recipe["diet_tags"])
     course_types = infer_course_types(recipe)
     feature_tags = get_recipe_feature_tags(recipe)
     search_tags = get_recipe_search_tags(recipe)
+    solar_terms = request.get("solar_terms", [])
 
     flavor_overlap = [tag for tag in request["favorite_flavors"] if tag in recipe_flavors]
     if flavor_overlap:
@@ -212,6 +223,12 @@ def _score_recipe(recipe: dict, request: dict, favorite_counts: dict, skip_count
         if overlap_tags:
             score += 18 + 6 * min(len(overlap_tags), 3)
             reasons.append(f"标签上匹配到 {' / '.join(overlap_tags[:3])}")
+
+    if solar_terms:
+        term_overlap = [tag for tag in solar_terms if tag in feature_tags]
+        if term_overlap:
+            score += 34
+            reasons.append(f"正好对应 {term_overlap[0]} 这段时令和习俗")
 
     preferred_course_types = request.get("preferred_course_types", [])
     avoid_course_types = request.get("avoid_course_types", [])
@@ -322,15 +339,49 @@ def recommend_recipes(
     intent_tags = request.get("intent_tags", [])
     mood_search_tags = request.get("mood_search_tags", [])
     primary_bucket = request.get("primary_bucket")
+    beverage_categories = request.get("beverage_categories", [])
+    solar_terms = request.get("solar_terms", [])
+    cuisine_groups = request.get("cuisine_groups", [])
+    required_flavors = request.get("required_flavors", [])
 
     recipes["course_types"] = recipes.apply(lambda row: infer_course_types(row.to_dict()), axis=1)
+    if "beverage_category" not in recipes.columns:
+        recipes["beverage_category"] = recipes.apply(lambda row: classify_beverage_category(row.to_dict()), axis=1)
 
     if primary_bucket:
         strict_bucket = recipes[
             recipes.apply(lambda row: matches_primary_bucket(row.to_dict(), primary_bucket), axis=1)
         ]
         if not strict_bucket.empty:
-            recipes = strict_bucket
+            recipes = strict_bucket.copy()
+
+    if beverage_categories:
+        drink_filtered = recipes[recipes["beverage_category"].isin(beverage_categories)]
+        if not drink_filtered.empty:
+            recipes = drink_filtered.copy()
+
+    if cuisine_groups:
+        cuisine_filtered = recipes[recipes["cuisine_group"].isin(cuisine_groups)]
+        if not cuisine_filtered.empty:
+            recipes = cuisine_filtered.copy()
+
+    if required_flavors:
+        recipes["profile_flavor_tags"] = recipes.apply(lambda row: get_recipe_profile_tags(row.to_dict()), axis=1)
+        flavor_filtered = recipes[
+            recipes["profile_flavor_tags"].apply(
+                lambda tags: all(required_flavor in tags for required_flavor in required_flavors)
+            )
+        ]
+        if not flavor_filtered.empty:
+            recipes = flavor_filtered.copy()
+
+    if solar_terms:
+        recipes["feature_tags_list"] = recipes.apply(lambda row: get_recipe_feature_tags(row.to_dict()), axis=1)
+        seasonal_filtered = recipes[
+            recipes["feature_tags_list"].apply(lambda tags: any(solar_term in tags for solar_term in solar_terms))
+        ]
+        if not seasonal_filtered.empty:
+            recipes = seasonal_filtered.copy()
 
     if mood_search_tags:
         recipes["search_tags_list"] = recipes.apply(lambda row: get_recipe_search_tags(row.to_dict()), axis=1)
@@ -345,7 +396,8 @@ def recommend_recipes(
             recipes = mood_tagged.copy()
 
     if intent_tags:
-        recipes["feature_tags_list"] = recipes.apply(lambda row: get_recipe_feature_tags(row.to_dict()), axis=1)
+        if "feature_tags_list" not in recipes.columns:
+            recipes["feature_tags_list"] = recipes.apply(lambda row: get_recipe_feature_tags(row.to_dict()), axis=1)
         tagged = recipes[
             recipes["feature_tags_list"].apply(
                 lambda feature_tags: any(tag in feature_tags for tag in intent_tags)
@@ -353,9 +405,9 @@ def recommend_recipes(
         ]
         if request.get("mood_bucket"):
             if len(tagged) >= max(limit, 3):
-                recipes = tagged
+                recipes = tagged.copy()
         elif len(tagged) >= max(limit * 2, 6):
-            recipes = tagged
+            recipes = tagged.copy()
 
     if avoid_course_types:
         filtered = recipes[
@@ -364,7 +416,7 @@ def recommend_recipes(
             )
         ]
         if not filtered.empty:
-            recipes = filtered
+            recipes = filtered.copy()
 
     if preferred_course_types:
         focused = recipes[
@@ -373,7 +425,7 @@ def recommend_recipes(
             )
         ]
         if len(focused) >= max(limit, 3):
-            recipes = focused
+            recipes = focused.copy()
 
     favorite_counts = get_user_action_counts(user_id, "favorite")
     skip_counts = get_user_action_counts(user_id, "skip")
@@ -388,7 +440,7 @@ def recommend_recipes(
         score += random.uniform(0, 2.5)
         recipe["score"] = score
         recipe["reason"] = "；".join(reasons[:3]) if reasons else "整体条件比较均衡，适合作为今天的候选菜。"
-        recipe["display_tags"] = parse_tags(recipe["flavor_tags"]) + parse_tags(recipe["scene_tags"])
+        recipe["display_tags"] = build_display_tags(recipe)
         ranked.append(recipe)
 
     ranked.sort(key=lambda item: item["score"], reverse=True)
