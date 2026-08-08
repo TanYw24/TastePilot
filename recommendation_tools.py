@@ -1,9 +1,21 @@
-from pathlib import Path
 import random
 
 import pandas as pd
 
-from db import get_favorite_recipes, get_user_action_counts, record_action
+from db import (
+    get_all_recipes,
+    get_favorite_recipes,
+    get_profile_feedback_summary,
+    get_recent_query_signals,
+    get_recent_user_actions,
+    get_recipe_record_by_id,
+    get_user_action_counts,
+    get_user_preferences,
+    init_db,
+    postgres_recipes_available,
+    record_action,
+    record_query_signal,
+)
 from recipe_taxonomy import (
     build_display_tags,
     classify_beverage_category,
@@ -12,10 +24,14 @@ from recipe_taxonomy import (
     SOLAR_TERMS,
     parse_tags,
 )
-DATA_PATH = Path(__file__).resolve().parent / "data" / "recipes.csv"
 _RECIPES_CACHE = None
 _BUDGET_RANK = {"低预算": 1, "中等预算": 2, "高预算": 3}
 _TIME_RANK = {"15 分钟内": 15, "30 分钟内": 30, "45 分钟内": 45, "60 分钟内": 60}
+_PROFILE_ACTION_WEIGHTS = {"favorite": 5.5, "view": 2.4, "skip": -3.8}
+_PROFILE_FEEDBACK_WEIGHTS = {"confirm": 4.5, "downvote": -5.5}
+_TIME_SLOT_LABELS = ["早餐", "午餐", "下午茶", "晚餐", "夜宵"]
+
+init_db()
 
 
 def budget_options() -> list[str]:
@@ -41,16 +57,21 @@ def vegetarian_options() -> list[str]:
 def load_recipes() -> pd.DataFrame:
     global _RECIPES_CACHE
     if _RECIPES_CACHE is None:
-        _RECIPES_CACHE = pd.read_csv(DATA_PATH)
+        _RECIPES_CACHE = pd.DataFrame(get_all_recipes())
     return _RECIPES_CACHE.copy()
+
+
 def get_recipe_by_id(recipe_id: int) -> dict | None:
-    recipes = load_recipes()
-    match = recipes[recipes["id"] == recipe_id]
-    if match.empty:
+    recipe = get_recipe_record_by_id(recipe_id)
+    if recipe is None:
         return None
-    recipe = match.iloc[0].to_dict()
     recipe["display_tags"] = build_display_tags(recipe)
     return recipe
+
+
+def reset_recipe_cache() -> None:
+    global _RECIPES_CACHE
+    _RECIPES_CACHE = None
 
 
 def get_recipe_feature_tags(recipe: dict) -> list[str]:
@@ -72,6 +93,178 @@ def get_recipe_search_tags(recipe: dict) -> list[str]:
 
 def _count_tag_overlap(recipe_tags: list[str], target_tags: list[str]) -> int:
     return sum(1 for tag in target_tags if tag in recipe_tags)
+
+
+def get_recipe_time_slots(recipe: dict) -> list[str]:
+    scene_tags = set(parse_tags(recipe.get("scene_tags", "")))
+    feature_tags = set(parse_tags(recipe.get("feature_tags", "")))
+
+    slots = []
+    if {"早餐", "早上"}.intersection(scene_tags) or "早午餐" in feature_tags:
+        slots.append("早餐")
+    if "夏日午餐" in scene_tags or "早午餐" in feature_tags:
+        slots.append("午餐")
+    if {"下午茶", "夏日午后"}.intersection(scene_tags) or {"下午茶", "茶点", "咖啡搭子"}.intersection(feature_tags):
+        slots.append("下午茶")
+    if {"双人晚餐", "家庭晚餐", "朋友聚餐", "冬日夜晚"}.intersection(scene_tags) or {"家庭", "聚餐", "正餐", "热食"}.intersection(feature_tags):
+        slots.append("晚餐")
+    if "深夜加餐" in scene_tags or "夜宵" in feature_tags:
+        slots.append("夜宵")
+    return list(dict.fromkeys(slots))
+
+
+def get_scene_time_slot(scene: str) -> str:
+    mapping = {
+        "早上": "早餐",
+        "早餐": "早餐",
+        "夏日午餐": "午餐",
+        "下午茶": "下午茶",
+        "夏日午后": "下午茶",
+        "双人晚餐": "晚餐",
+        "家庭晚餐": "晚餐",
+        "朋友聚餐": "晚餐",
+        "冬日夜晚": "晚餐",
+        "深夜加餐": "夜宵",
+    }
+    return mapping.get(scene, "")
+
+
+def _confidence_label(signal_count: float) -> str:
+    if signal_count >= 22:
+        return "画像已经比较稳定了，我大致知道你最近的口味重心。"
+    if signal_count >= 10:
+        return "画像正在逐渐成形，最近几次选择已经能看出明显倾向。"
+    return "我还在继续认识你，先根据少量行为和长期偏好做判断。"
+
+
+def _top_profile_items(score_map: dict[str, float], limit: int = 4) -> list[dict]:
+    ranked = sorted(score_map.items(), key=lambda item: item[1], reverse=True)
+    return [{"label": label, "score": round(score, 2)} for label, score in ranked[:limit] if score > 0]
+
+
+def build_user_profile(user_id: int) -> dict:
+    preferences = get_user_preferences(user_id)
+    recipes = load_recipes().set_index("id")
+    feedback_summary = get_profile_feedback_summary(user_id)
+    recent_actions = get_recent_user_actions(user_id, limit=120)
+    recent_queries = get_recent_query_signals(user_id, limit=40)
+
+    flavor_scores: dict[str, float] = {}
+    cuisine_scores: dict[str, float] = {}
+    time_slot_scores: dict[str, float] = {}
+    signal_count = 0.0
+
+    for flavor in [item for item in preferences.get("favorite_flavors", "").split("|") if item]:
+        flavor_scores[flavor] = flavor_scores.get(flavor, 0) + 6.5
+        signal_count += 0.6
+
+    for index, action in enumerate(recent_actions):
+        recipe_id = action.get("recipe_id")
+        if recipe_id not in recipes.index:
+            continue
+
+        recipe = recipes.loc[recipe_id].to_dict()
+        recency_factor = max(0.35, 1 - index * 0.018)
+        weight = _PROFILE_ACTION_WEIGHTS.get(action["action_type"], 0) * recency_factor
+        signal_count += abs(weight) * 0.35
+
+        for flavor in get_recipe_profile_tags(recipe):
+            flavor_scores[flavor] = flavor_scores.get(flavor, 0) + weight
+
+        cuisine_group = recipe.get("cuisine_group")
+        if cuisine_group:
+            cuisine_scores[cuisine_group] = cuisine_scores.get(cuisine_group, 0) + weight * 0.95
+
+        for slot in get_recipe_time_slots(recipe):
+            time_slot_scores[slot] = time_slot_scores.get(slot, 0) + weight * 0.85
+
+    for index, signal in enumerate(recent_queries):
+        recency_factor = max(0.3, 1 - index * 0.045)
+        for flavor in parse_tags(signal.get("flavor_tags", "")):
+            flavor_scores[flavor] = flavor_scores.get(flavor, 0) + 1.8 * recency_factor
+            signal_count += 0.2
+        for cuisine_group in parse_tags(signal.get("cuisine_groups", "")):
+            cuisine_scores[cuisine_group] = cuisine_scores.get(cuisine_group, 0) + 1.65 * recency_factor
+            signal_count += 0.2
+        slot = get_scene_time_slot(signal.get("scene", ""))
+        if slot:
+            time_slot_scores[slot] = time_slot_scores.get(slot, 0) + 1.4 * recency_factor
+            signal_count += 0.18
+
+    for (profile_type, profile_value), feedback_counts in feedback_summary.items():
+        delta = (
+            feedback_counts.get("confirm", 0) * _PROFILE_FEEDBACK_WEIGHTS["confirm"]
+            + feedback_counts.get("downvote", 0) * _PROFILE_FEEDBACK_WEIGHTS["downvote"]
+        )
+        if profile_type == "flavor":
+            flavor_scores[profile_value] = flavor_scores.get(profile_value, 0) + delta
+        elif profile_type == "cuisine":
+            cuisine_scores[profile_value] = cuisine_scores.get(profile_value, 0) + delta
+        elif profile_type == "time_slot":
+            time_slot_scores[profile_value] = time_slot_scores.get(profile_value, 0) + delta
+
+    top_flavors = _top_profile_items(flavor_scores, limit=4)
+    top_cuisines = _top_profile_items(cuisine_scores, limit=4)
+    active_time_slots = _top_profile_items(time_slot_scores, limit=3)
+
+    explanations = []
+    if top_flavors:
+        explanations.append(f"最近最稳定的口味偏向是 {', '.join(item['label'] for item in top_flavors[:2])}。")
+    if top_cuisines:
+        explanations.append(f"菜系上更常靠近 {', '.join(item['label'] for item in top_cuisines[:2])}。")
+    if active_time_slots:
+        explanations.append(f"更常在 {active_time_slots[0]['label']} 这个时段来找吃的。")
+    if not explanations:
+        explanations.append("当前行为还不多，我先用你的长期偏好做一张初始画像。")
+
+    return {
+        "top_flavors": top_flavors,
+        "top_cuisines": top_cuisines,
+        "active_time_slots": active_time_slots,
+        "confidence_summary": _confidence_label(signal_count),
+        "profile_explanations": explanations,
+        "signal_strength": round(signal_count, 2),
+    }
+
+
+def _profile_bonus(recipe: dict, request: dict, profile: dict | None) -> tuple[float, list[str]]:
+    if not profile:
+        return 0.0, []
+
+    has_strong_current_intent = bool(
+        request.get("current_input_flavors")
+        or request.get("current_input_cuisine_groups")
+        or request.get("current_input_scene")
+        or request.get("required_flavors")
+        or request.get("mood_search_tags")
+    )
+    scale = 0.42 if has_strong_current_intent else 1.0
+
+    flavor_weights = {item["label"]: item["score"] for item in profile.get("top_flavors", [])}
+    cuisine_weights = {item["label"]: item["score"] for item in profile.get("top_cuisines", [])}
+    time_weights = {item["label"]: item["score"] for item in profile.get("active_time_slots", [])}
+
+    bonus = 0.0
+    reasons = []
+
+    matched_flavors = [tag for tag in get_recipe_profile_tags(recipe) if tag in flavor_weights]
+    if matched_flavors:
+        flavor_bonus = sum(min(flavor_weights[tag], 14) for tag in matched_flavors[:2]) * 0.8 * scale
+        bonus += flavor_bonus
+        reasons.append(f"也贴近你最近常选的 {', '.join(matched_flavors[:2])}")
+
+    cuisine_group = recipe.get("cuisine_group")
+    if cuisine_group in cuisine_weights:
+        bonus += min(cuisine_weights[cuisine_group], 12) * 0.75 * scale
+        reasons.append(f"菜系上靠近你最近偏爱的 {cuisine_group}")
+
+    recipe_slots = get_recipe_time_slots(recipe)
+    matched_slots = [slot for slot in recipe_slots if slot in time_weights]
+    if matched_slots:
+        bonus += min(time_weights[matched_slots[0]], 10) * 0.65 * scale
+        reasons.append(f"也符合你常在 {matched_slots[0]} 想吃的节奏")
+
+    return bonus, reasons[:2]
 
 
 def matches_primary_bucket(recipe: dict, primary_bucket: str) -> bool:
@@ -123,6 +316,9 @@ def infer_course_types(recipe: dict) -> list[str]:
 
 def _merge_preference_query(query: dict, preferences: dict) -> dict:
     merged = {}
+    merged["current_input_flavors"] = query.get("favorite_flavors", [])
+    merged["current_input_cuisine_groups"] = query.get("cuisine_groups", [])
+    merged["current_input_scene"] = query.get("scene", "")
     merged["favorite_flavors"] = list(
         dict.fromkeys(
             [tag for tag in preferences.get("favorite_flavors", "").split("|") if tag]
@@ -430,11 +626,15 @@ def recommend_recipes(
     favorite_counts = get_user_action_counts(user_id, "favorite")
     skip_counts = get_user_action_counts(user_id, "skip")
     favorite_recipe_ids = set(get_favorite_recipes(user_id))
+    profile = build_user_profile(user_id)
 
     ranked = []
     for _, row in recipes.iterrows():
         recipe = row.to_dict()
         score, reasons = _score_recipe(recipe, request, favorite_counts, skip_counts)
+        profile_bonus, profile_reasons = _profile_bonus(recipe, request, profile)
+        score += profile_bonus
+        reasons.extend(profile_reasons)
         if recipe["id"] in favorite_recipe_ids:
             score += 8
         score += random.uniform(0, 2.5)
@@ -450,3 +650,12 @@ def recommend_recipes(
         record_action(user_id, recipe["id"], "view")
 
     return picked
+
+
+def persist_query_profile_signal(user_id: int, query: dict) -> None:
+    record_query_signal(
+        user_id,
+        flavor_tags=query.get("favorite_flavors", []),
+        cuisine_groups=query.get("cuisine_groups", []),
+        scene=query.get("scene", ""),
+    )

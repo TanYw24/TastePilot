@@ -140,7 +140,9 @@ def get_recipe_profile_tags(recipe: dict) -> list[str]:
     beverage_category = recipe.get("beverage_category") or classify_beverage_category(recipe)
     name = str(recipe.get("name", ""))
 
-    if any(keyword in name for keyword in ["酸辣", "酸汤", "泡菜", "柠檬", "青梅", "酸梅"]):
+    if any(keyword in name for keyword in ["酸辣", "酸汤", "泡菜", "柠檬"]):
+        tags.append("酸口")
+    if any(keyword in name for keyword in ["青梅", "酸梅"]):
         tags.append("酸甜")
     if any(keyword in name for keyword in ["酸辣", "麻辣", "香辣", "剁椒", "泡菜", "辣"]):
         tags.append("香辣")

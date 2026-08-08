@@ -4,3 +4,5 @@ __pycache__/
 .env
 .DS_Store
 data/tastepilot.db
+tastepilot.db
+scripts/__pycache__/

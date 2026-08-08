@@ -19,6 +19,7 @@ from db import (
     get_user_by_email,
     get_favorite_recipes,
     get_preference_summary,
+    record_profile_feedback,
     get_recent_recipe_actions,
     get_user_by_session_token,
     get_user_preferences,
@@ -28,6 +29,7 @@ from db import (
     save_user_preferences,
 )
 from recommendation_tools import get_recipe_by_id, recommend_recipes
+from recommendation_tools import build_user_profile, persist_query_profile_signal
 
 
 st.set_page_config(page_title="TastePilot", layout="wide")
@@ -51,6 +53,22 @@ st.markdown(
     }
     [data-testid="stAppViewContainer"] > .main {
         background: transparent;
+    }
+    [data-testid="stHeader"] {
+        display: none;
+    }
+    [data-testid="stToolbar"] {
+        display: none;
+    }
+    [data-testid="stDecoration"] {
+        display: none;
+    }
+    #MainMenu,
+    footer {
+        display: none !important;
+    }
+    [data-testid="stAppViewBlockContainer"] {
+        padding-top: 1.35rem;
     }
     .main * {
         font-family: Georgia, "Times New Roman", serif;
@@ -305,6 +323,108 @@ st.markdown(
         color: #7b5a47;
         line-height: 1.7;
         margin-bottom: 0.6rem;
+    }
+    .profile-shell {
+        display: grid;
+        gap: 1rem;
+    }
+    .profile-lead {
+        padding: 1.35rem 1.4rem;
+        border-radius: 28px;
+        background: linear-gradient(180deg, rgba(255, 251, 246, 0.78), rgba(255, 246, 238, 0.66));
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        box-shadow:
+            0 12px 28px rgba(154, 102, 72, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.28);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        color: #694330;
+    }
+    .profile-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+    }
+    .profile-card {
+        padding: 1.15rem 1.1rem;
+        border-radius: 24px;
+        background: rgba(255, 251, 246, 0.74);
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        box-shadow:
+            0 10px 24px rgba(149, 97, 63, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.28);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+    .profile-card-title {
+        font-size: 1.18rem;
+        font-weight: 700;
+        color: #7a311f;
+        margin-bottom: 0.25rem;
+    }
+    .profile-card-copy {
+        color: #7b5a47;
+        line-height: 1.7;
+        margin-bottom: 0.8rem;
+    }
+    .profile-item {
+        margin-bottom: 0.9rem;
+        padding-bottom: 0.85rem;
+        border-bottom: 1px solid rgba(212, 182, 161, 0.28);
+    }
+    .profile-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    .profile-item-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        color: #6d4531;
+        font-weight: 600;
+        margin-bottom: 0.42rem;
+    }
+    .profile-meter {
+        width: 100%;
+        height: 0.5rem;
+        border-radius: 999px;
+        background: rgba(226, 203, 188, 0.38);
+        overflow: hidden;
+        margin-bottom: 0.45rem;
+    }
+    .profile-meter-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, rgba(194, 111, 72, 0.9), rgba(236, 161, 102, 0.82));
+    }
+    .profile-item-note {
+        color: #88604b;
+        font-size: 0.86rem;
+        line-height: 1.55;
+    }
+    .profile-feedback-row {
+        margin-top: 0.48rem;
+    }
+    .profile-feedback-row div[data-testid="stButton"] > button {
+        min-height: 2rem;
+        height: 2rem;
+        padding: 0 0.8rem !important;
+        border-radius: 999px;
+        font-size: 0.82rem;
+    }
+    .profile-empty {
+        padding: 1.05rem 1.1rem;
+        border-radius: 18px;
+        background: rgba(255, 249, 243, 0.72);
+        color: #7c5a46;
+        line-height: 1.7;
+    }
+    @media (max-width: 900px) {
+        .profile-grid {
+            grid-template-columns: 1fr;
+        }
     }
     .skill-section {
         margin: 0.55rem 0 0.8rem 0;
@@ -660,6 +780,10 @@ if "auth_notice" not in st.session_state:
     st.session_state.auth_notice = ""
 if "reset_email" not in st.session_state:
     st.session_state.reset_email = ""
+if "current_page" not in st.session_state:
+    st.session_state.current_page = "recommend"
+if "profile_notice" not in st.session_state:
+    st.session_state.profile_notice = ""
 
 
 def set_auth_mode(mode: str) -> None:
@@ -800,6 +924,8 @@ def logout() -> None:
     st.session_state.last_query = {}
     st.session_state.excluded_recipe_ids = []
     st.session_state.preference_notice = ""
+    st.session_state.profile_notice = ""
+    st.session_state.current_page = "recommend"
     st.rerun()
 
 
@@ -838,6 +964,148 @@ def clear_prompt() -> None:
     st.session_state.last_query = {}
     st.session_state.excluded_recipe_ids = []
     st.session_state.sync_prompt_input = False
+
+
+def open_profile_page() -> None:
+    st.session_state.current_page = "profile"
+
+
+def open_recommend_page() -> None:
+    st.session_state.current_page = "recommend"
+
+
+def submit_profile_feedback(profile_type: str, profile_value: str, feedback_type: str) -> None:
+    record_profile_feedback(st.session_state.user["id"], profile_type, profile_value, feedback_type)
+    tone = "更像我" if feedback_type == "confirm" else "不太准"
+    st.session_state.profile_notice = f"已记下这条画像“{profile_value}”对你来说是“{tone}”。"
+
+
+def _profile_strength_width(score: float, items: list[dict]) -> float:
+    if not items:
+        return 0.0
+    max_score = max(item["score"] for item in items) or 1
+    return max(18.0, min(100.0, score / max_score * 100))
+
+
+def render_profile_module(title: str, description: str, items: list[dict], profile_type: str) -> None:
+    st.markdown(
+        f"""
+        <div class="profile-card">
+            <div class="profile-card-title">{title}</div>
+            <div class="profile-card-copy">{description}</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if not items:
+        st.markdown('<div class="profile-empty">还在慢慢认识你，先多点几次推荐，我会更快看出你稳定的偏好。</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+        return
+
+    for item in items:
+        width = _profile_strength_width(item["score"], items)
+        st.markdown(
+            f"""
+            <div class="profile-item">
+                <div class="profile-item-head">
+                    <span>{item['label']}</span>
+                    <span>{int(round(width))}%</span>
+                </div>
+                <div class="profile-meter">
+                    <div class="profile-meter-fill" style="width: {width:.1f}%"></div>
+                </div>
+                <div class="profile-item-note">这个标签最近更常出现在你收藏、浏览和搜索过的菜里。</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        feedback_cols = st.columns([1, 1, 3], gap="small")
+        with feedback_cols[0]:
+            if st.button("更像我", key=f"profile_confirm_{profile_type}_{item['label']}", use_container_width=True):
+                submit_profile_feedback(profile_type, item["label"], "confirm")
+                st.rerun()
+        with feedback_cols[1]:
+            if st.button("不太准", key=f"profile_downvote_{profile_type}_{item['label']}", use_container_width=True):
+                submit_profile_feedback(profile_type, item["label"], "downvote")
+                st.rerun()
+        st.markdown('<div class="profile-feedback-row"></div>', unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_profile_page() -> None:
+    profile = build_user_profile(st.session_state.user["id"])
+
+    st.markdown(
+        """
+        <div class="hero-card">
+            <div class="hero-shell">
+                <div>
+                    <div class="hero-kicker">Personal Taste Map</div>
+                    <div class="hero-title">我的口味画像</div>
+                    <div class="hero-subtitle">
+                        这不是一张静态标签表，而是 TastePilot 根据你的偏好、浏览、收藏和跳过慢慢学出来的口味轮廓。
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="hero-shape one"></div>
+                    <div class="hero-shape two"></div>
+                    <div class="hero-shape three"></div>
+                    <div class="hero-dot a"></div>
+                    <div class="hero-dot b"></div>
+                    <div class="hero-mini-card top">
+                        <div class="hero-mini-title">Profile</div>
+                        <span class="hero-emoji">🫖</span> 越用越懂你
+                    </div>
+                    <div class="hero-mini-card bottom">
+                        <div class="hero-mini-title">Signals</div>
+                        <span class="hero-emoji">📌</span> 收藏 / 浏览 / 跳过
+                    </div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        f"""
+        <div class="profile-shell">
+            <div class="profile-lead">
+                <div class="section-heading">这阵子我眼里的你</div>
+                <div class="section-copy">{profile['confidence_summary']}</div>
+                <div class="section-copy">{' '.join(profile['profile_explanations'])}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if st.session_state.profile_notice:
+        st.success(st.session_state.profile_notice)
+        st.session_state.profile_notice = ""
+
+    grid_cols = st.columns(3, gap="large")
+    with grid_cols[0]:
+        render_profile_module(
+            "常见口味",
+            "这里会沉淀你最近最常靠近的味型，用来帮推荐更快收窄方向。",
+            profile.get("top_flavors", []),
+            "flavor",
+        )
+    with grid_cols[1]:
+        render_profile_module(
+            "偏好菜系",
+            "我会把你最近更常接受的料理风格慢慢总结成稳定偏好。",
+            profile.get("top_cuisines", []),
+            "cuisine",
+        )
+    with grid_cols[2]:
+        render_profile_module(
+            "活跃时段",
+            "这会影响我在不同时间更倾向推荐什么节奏和氛围的食物。",
+            profile.get("active_time_slots", []),
+            "time_slot",
+        )
 
 
 def get_dynamic_skill_groups() -> tuple[str, list[tuple[str, list[tuple[str, str]]]]]:
@@ -1158,6 +1426,12 @@ def render_sidebar(preferences: dict) -> None:
         st.write(st.session_state.user["email"])
         st.button("退出登录", on_click=logout, use_container_width=True)
         st.markdown("---")
+        st.markdown("## 进入哪里")
+        if st.button("智能推荐主页", on_click=open_recommend_page, use_container_width=True):
+            pass
+        if st.button("我的口味画像", on_click=open_profile_page, use_container_width=True):
+            pass
+        st.markdown("---")
         st.markdown("## 这阵子的口味轨迹")
         view_total = action_totals.get("view", 0)
         favorite_total = action_totals.get("favorite", 0)
@@ -1183,7 +1457,7 @@ def render_sidebar(preferences: dict) -> None:
             st.session_state.preference_notice = ""
 
         with st.expander("修改偏好", expanded=False):
-            flavor_options = ["香辣", "酸甜", "清淡", "蒜香", "鲜香", "重口", "家常", "酱香"]
+            flavor_options = ["香辣", "酸口", "酸甜", "清淡", "蒜香", "鲜香", "重口", "家常", "酱香"]
             saved_flavors = preferences.get("favorite_flavors", "").split("|") if preferences.get("favorite_flavors") else []
             saved_disliked = preferences.get("disliked_ingredients", "")
             saved_goal = preferences.get("diet_goal", "均衡饮食")
@@ -1290,6 +1564,10 @@ def run_recommendation(preferences: dict, append_skill: str | None = None, repla
         prompt_override = st.session_state.prompt_text
 
     query, parsed = build_query_from_prompt(preferences, prompt_override=prompt_override)
+    if not replace_mode and (
+        parsed.get("favorite_flavors") or parsed.get("cuisine_groups") or parsed.get("scene")
+    ):
+        persist_query_profile_signal(st.session_state.user["id"], parsed)
     excluded_ids = st.session_state.excluded_recipe_ids if replace_mode else []
     recommendations = recommend_recipes(
         query=query,
@@ -1569,9 +1847,12 @@ def main() -> None:
 
     preferences = get_user_preferences(st.session_state.user["id"])
     render_sidebar(preferences)
-    render_input_area(preferences)
-    render_recipe_cards()
-    render_follow_up_actions(preferences)
+    if st.session_state.current_page == "profile":
+        render_profile_page()
+    else:
+        render_input_area(preferences)
+        render_recipe_cards()
+        render_follow_up_actions(preferences)
 
 
 main()
