@@ -476,6 +476,52 @@ st.markdown(
         font-size: 0.84rem;
         line-height: 1;
     }
+    @media (max-width: 700px) {
+        .selected-tags-label {
+            color: rgba(138, 55, 40, 0.72);
+            font-size: 0.82rem;
+            margin: 0 0 0.12rem 0;
+            padding-top: 0;
+        }
+        .selected-skill-row {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            align-items: flex-start !important;
+            justify-content: flex-start !important;
+            gap: 0.38rem 0.42rem !important;
+            margin: 0 0 0.32rem 0 !important;
+        }
+        .selected-skill-row [data-testid="stColumn"] {
+            width: auto !important;
+            min-width: 0 !important;
+            flex: 0 0 auto !important;
+        }
+        .selected-skill-row [data-testid="stVerticalBlock"] {
+            width: auto !important;
+            min-width: 0 !important;
+        }
+        .selected-skill-button div[data-testid="stButton"] {
+            width: auto !important;
+        }
+        .selected-skill-button div[data-testid="stButton"] > button {
+            width: auto !important;
+            min-width: 4.9rem;
+            max-width: 7.1rem;
+            min-height: 1.82rem;
+            height: 1.82rem;
+            padding: 0.06rem 0.58rem !important;
+            font-size: 0.78rem;
+            box-shadow:
+                0 6px 12px rgba(159, 110, 79, 0.055),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+        .selected-skill-button div[data-testid="stButton"] > button p {
+            font-size: 0.78rem;
+        }
+        .st-key-prompt_actions {
+            margin-top: -4.6rem !important;
+        }
+    }
     .recipe-card {
         padding: 1.1rem 1.1rem;
         border-radius: 20px;
