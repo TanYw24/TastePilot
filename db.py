@@ -1,7 +1,9 @@
 import hashlib
 import os
 import sqlite3
+from datetime import datetime, timedelta
 from pathlib import Path
+from secrets import token_urlsafe
 
 
 DB_PATH = Path(__file__).resolve().parent / "data" / "tastepilot.db"
@@ -49,6 +51,31 @@ def init_db() -> None:
                 user_id INTEGER NOT NULL,
                 recipe_id INTEGER NOT NULL,
                 action_type TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS login_sessions (
+                token TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                expires_at TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS password_reset_codes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                email TEXT NOT NULL,
+                code_hash TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                used_at TEXT,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(user_id) REFERENCES users(id)
             )
@@ -118,6 +145,123 @@ def authenticate_user(email: str, password: str) -> dict | None:
         return None
 
     return {"id": row["id"], "nickname": row["nickname"], "email": row["email"]}
+
+
+def get_user_by_email(email: str) -> dict | None:
+    with get_connection() as connection:
+        row = connection.execute(
+            "SELECT id, nickname, email FROM users WHERE email = ?",
+            (email.lower(),),
+        ).fetchone()
+
+    return {"id": row["id"], "nickname": row["nickname"], "email": row["email"]} if row else None
+
+
+def create_login_session(user_id: int, duration_days: int = 30) -> str:
+    token = token_urlsafe(32)
+    expires_at = (datetime.utcnow() + timedelta(days=duration_days)).isoformat(timespec="seconds")
+    with get_connection() as connection:
+        connection.execute(
+            "INSERT INTO login_sessions (token, user_id, expires_at) VALUES (?, ?, ?)",
+            (token, user_id, expires_at),
+        )
+    return token
+
+
+def get_user_by_session_token(token: str) -> dict | None:
+    with get_connection() as connection:
+        row = connection.execute(
+            """
+            SELECT ls.expires_at, u.id, u.nickname, u.email
+            FROM login_sessions ls
+            JOIN users u ON u.id = ls.user_id
+            WHERE ls.token = ?
+            """,
+            (token,),
+        ).fetchone()
+
+        if row is None:
+            return None
+
+        expires_at = datetime.fromisoformat(row["expires_at"])
+        if expires_at <= datetime.utcnow():
+            connection.execute("DELETE FROM login_sessions WHERE token = ?", (token,))
+            return None
+
+    return {"id": row["id"], "nickname": row["nickname"], "email": row["email"]}
+
+
+def delete_login_session(token: str) -> None:
+    with get_connection() as connection:
+        connection.execute("DELETE FROM login_sessions WHERE token = ?", (token,))
+
+
+def create_password_reset_code(email: str, code: str, expiry_minutes: int = 10) -> int | None:
+    user = get_user_by_email(email)
+    if user is None:
+        return None
+
+    code_hash = hashlib.sha256(code.encode("utf-8")).hexdigest()
+    expires_at = (datetime.utcnow() + timedelta(minutes=expiry_minutes)).isoformat(timespec="seconds")
+
+    with get_connection() as connection:
+        connection.execute(
+            "DELETE FROM password_reset_codes WHERE user_id = ? OR expires_at <= ?",
+            (user["id"], datetime.utcnow().isoformat(timespec="seconds")),
+        )
+        connection.execute(
+            """
+            INSERT INTO password_reset_codes (user_id, email, code_hash, expires_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            (user["id"], user["email"], code_hash, expires_at),
+        )
+
+    return int(user["id"])
+
+
+def reset_password_with_code(email: str, code: str, new_password: str) -> tuple[bool, str]:
+    user = get_user_by_email(email)
+    if user is None:
+        return False, "这个邮箱还没有注册。"
+
+    try:
+        password_hash = _hash_password(new_password)
+    except ValueError as exc:
+        return False, str(exc)
+
+    code_hash = hashlib.sha256(code.strip().encode("utf-8")).hexdigest()
+
+    with get_connection() as connection:
+        row = connection.execute(
+            """
+            SELECT id, expires_at, used_at
+            FROM password_reset_codes
+            WHERE user_id = ? AND email = ? AND code_hash = ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (user["id"], user["email"], code_hash),
+        ).fetchone()
+
+        if row is None:
+            return False, "验证码不正确。"
+        if row["used_at"]:
+            return False, "这个验证码已经用过了。"
+        if datetime.fromisoformat(row["expires_at"]) <= datetime.utcnow():
+            return False, "验证码已过期，请重新获取。"
+
+        connection.execute(
+            "UPDATE users SET password_hash = ? WHERE id = ?",
+            (password_hash, user["id"]),
+        )
+        connection.execute(
+            "UPDATE password_reset_codes SET used_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (row["id"],),
+        )
+        connection.execute("DELETE FROM login_sessions WHERE user_id = ?", (user["id"],))
+
+    return True, "密码已重置，请用新密码登录。"
 
 
 def get_user_preferences(user_id: int) -> dict:

@@ -1,19 +1,30 @@
+import os
+import smtplib
 from datetime import datetime
+from email.message import EmailMessage
+from random import randint
 from zoneinfo import ZoneInfo
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from agent import parse_free_text_request
 from db import (
     authenticate_user,
     create_user,
+    create_login_session,
+    create_password_reset_code,
+    delete_login_session,
     get_action_totals,
+    get_user_by_email,
     get_favorite_recipes,
     get_preference_summary,
     get_recent_recipe_actions,
+    get_user_by_session_token,
     get_user_preferences,
     init_db,
     record_action,
+    reset_password_with_code,
     save_user_preferences,
 )
 from recommendation_tools import get_recipe_by_id, recommend_recipes
@@ -22,6 +33,9 @@ from recommendation_tools import get_recipe_by_id, recommend_recipes
 st.set_page_config(page_title="TastePilot", layout="wide")
 
 init_db()
+
+LOGIN_COOKIE_NAME = "tastepilot_session"
+LOGIN_COOKIE_MAX_AGE = 30 * 24 * 60 * 60
 
 st.markdown(
     """
@@ -630,6 +644,141 @@ if "auth_mode" not in st.session_state:
     st.session_state.auth_mode = "login"
 if "sync_prompt_input" not in st.session_state:
     st.session_state.sync_prompt_input = False
+if "auth_session_token" not in st.session_state:
+    st.session_state.auth_session_token = None
+if "pending_login_cookie_token" not in st.session_state:
+    st.session_state.pending_login_cookie_token = None
+if "clear_login_cookie" not in st.session_state:
+    st.session_state.clear_login_cookie = False
+if "preference_notice" not in st.session_state:
+    st.session_state.preference_notice = ""
+if "reset_notice" not in st.session_state:
+    st.session_state.reset_notice = ""
+if "reset_debug_code" not in st.session_state:
+    st.session_state.reset_debug_code = ""
+if "auth_notice" not in st.session_state:
+    st.session_state.auth_notice = ""
+if "reset_email" not in st.session_state:
+    st.session_state.reset_email = ""
+
+
+def set_auth_mode(mode: str) -> None:
+    st.session_state.auth_mode = mode
+    if mode == "forgot_password":
+        st.query_params["auth_mode"] = "forgot_password"
+    else:
+        st.query_params.clear()
+
+
+def sync_auth_mode_from_query() -> None:
+    query_mode = st.query_params.get("auth_mode")
+    if query_mode == "forgot_password":
+        st.session_state.auth_mode = "forgot_password"
+    elif st.session_state.auth_mode == "forgot_password":
+        st.session_state.auth_mode = "login"
+
+
+def sync_login_cookie() -> None:
+    pending_token = st.session_state.get("pending_login_cookie_token")
+    if pending_token:
+        components.html(
+            f"""
+            <script>
+            const secure = window.location.protocol === "https:" ? "; Secure" : "";
+            document.cookie = "{LOGIN_COOKIE_NAME}={pending_token}; path=/; max-age={LOGIN_COOKIE_MAX_AGE}; SameSite=Lax" + secure;
+            </script>
+            """,
+            height=0,
+        )
+        st.session_state.pending_login_cookie_token = None
+
+    if st.session_state.get("clear_login_cookie"):
+        components.html(
+            f"""
+            <script>
+            document.cookie = "{LOGIN_COOKIE_NAME}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+            </script>
+            """,
+            height=0,
+        )
+        st.session_state.clear_login_cookie = False
+
+
+def restore_login_session() -> None:
+    if st.session_state.user is not None:
+        return
+
+    session_token = st.context.cookies.get(LOGIN_COOKIE_NAME)
+    if not session_token:
+        return
+
+    user = get_user_by_session_token(session_token)
+    if user is None:
+        st.session_state.clear_login_cookie = True
+        st.session_state.auth_session_token = None
+        return
+
+    st.session_state.user = user
+    st.session_state.auth_session_token = session_token
+
+
+def _read_smtp_setting(name: str, default: str = "") -> str:
+    try:
+        if name in st.secrets:
+            return str(st.secrets[name])
+    except Exception:
+        pass
+    return os.getenv(name, default)
+
+
+def send_password_reset_email(recipient_email: str, code: str) -> tuple[bool, str]:
+    smtp_host = _read_smtp_setting("SMTP_HOST")
+    smtp_port = int(_read_smtp_setting("SMTP_PORT", "587"))
+    smtp_username = _read_smtp_setting("SMTP_USERNAME")
+    smtp_password = _read_smtp_setting("SMTP_PASSWORD")
+    smtp_from_email = _read_smtp_setting("SMTP_FROM_EMAIL", smtp_username)
+    smtp_from_name = _read_smtp_setting("SMTP_FROM_NAME", "TastePilot")
+    smtp_use_tls = _read_smtp_setting("SMTP_USE_TLS", "true").lower() != "false"
+
+    if not all([smtp_host, smtp_port, smtp_username, smtp_password, smtp_from_email]):
+        return False, "当前还没有配置邮件服务，已切换到本地调试模式。"
+
+    message = EmailMessage()
+    message["Subject"] = "TastePilot 密码重置验证码"
+    message["From"] = f"{smtp_from_name} <{smtp_from_email}>"
+    message["To"] = recipient_email
+    message.set_content(
+        f"你的 TastePilot 密码重置验证码是：{code}\n\n"
+        "验证码 10 分钟内有效。如果这不是你本人操作，请忽略这封邮件。"
+    )
+
+    try:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server:
+            if smtp_use_tls:
+                server.starttls()
+            server.login(smtp_username, smtp_password)
+            server.send_message(message)
+    except Exception:
+        return False, "邮件发送失败，已切换到本地调试模式。"
+
+    return True, "验证码已经发送到你的邮箱。"
+
+
+def send_reset_code(email: str) -> None:
+    normalized_email = email.strip().lower()
+    user = get_user_by_email(normalized_email)
+    if user is None:
+        st.session_state.reset_notice = "这个邮箱还没有注册。"
+        st.session_state.reset_debug_code = ""
+        st.session_state.reset_email = ""
+        return
+
+    code = f"{randint(0, 999999):06d}"
+    create_password_reset_code(normalized_email, code)
+    sent, message = send_password_reset_email(normalized_email, code)
+    st.session_state.reset_email = normalized_email
+    st.session_state.reset_notice = message
+    st.session_state.reset_debug_code = "" if sent else code
 
 
 def render_tag_pills(tags: list[str]) -> str:
@@ -638,6 +787,11 @@ def render_tag_pills(tags: list[str]) -> str:
 
 
 def logout() -> None:
+    session_token = st.session_state.get("auth_session_token")
+    if session_token:
+        delete_login_session(session_token)
+    st.session_state.auth_session_token = None
+    st.session_state.clear_login_cookie = True
     st.session_state.user = None
     st.session_state.prompt_text = ""
     st.session_state.prompt_text_input = ""
@@ -645,6 +799,7 @@ def logout() -> None:
     st.session_state.recommendations = []
     st.session_state.last_query = {}
     st.session_state.excluded_recipe_ids = []
+    st.session_state.preference_notice = ""
     st.rerun()
 
 
@@ -811,6 +966,48 @@ def render_auth_screen() -> None:
                 color: rgba(236, 228, 220, 0.62) !important;
             }
         }
+        .password-row-label {
+            margin-bottom: 0.35rem;
+            color: #2f3240;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .reset-link-note {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            min-height: 100%;
+        }
+        .reset-link-note a,
+        .auth-inline-link a {
+            color: rgba(255, 239, 226, 0.84) !important;
+            font-size: 0.76rem !important;
+            font-weight: 500 !important;
+            text-decoration: underline;
+            white-space: nowrap;
+        }
+        .reset-link-note a:hover,
+        .auth-inline-link a:hover {
+            color: #fff7ee !important;
+        }
+        @media (prefers-color-scheme: light) {
+            .password-row-label {
+                color: #3b312a;
+            }
+            .reset-link-note a,
+            .auth-inline-link a {
+                color: rgba(118, 78, 55, 0.82) !important;
+            }
+            .reset-link-note a:hover,
+            .auth-inline-link a:hover {
+                color: #7a4930 !important;
+            }
+        }
+        @media (prefers-color-scheme: dark) {
+            .password-row-label {
+                color: #f3eee8;
+            }
+        }
         @media (max-width: 900px) {
             .main .block-container {
                 min-height: auto;
@@ -838,6 +1035,9 @@ def render_auth_screen() -> None:
         """,
         unsafe_allow_html=True,
     )
+    if st.session_state.auth_notice:
+        st.success(st.session_state.auth_notice)
+        st.session_state.auth_notice = ""
     st.markdown('<div class="auth-form-shell">', unsafe_allow_html=True)
     with st.container():
         if st.session_state.auth_mode == "login":
@@ -845,23 +1045,34 @@ def render_auth_screen() -> None:
             st.caption("已经有账号了，直接回来继续选菜。")
             with st.form("login_form", clear_on_submit=False):
                 email = st.text_input("邮箱", placeholder="you@example.com")
-                password = st.text_input("密码", type="password")
-                submitted = st.form_submit_button("登录并进入", use_container_width=True)
-            if submitted:
+                st.markdown('<div class="password-row-label">密码</div>', unsafe_allow_html=True)
+                password_col, reset_col = st.columns([0.86, 0.14], gap="small")
+                with password_col:
+                    password = st.text_input("密码", type="password", label_visibility="collapsed")
+                with reset_col:
+                    st.markdown(
+                        '<div class="reset-link-note"><a href="?auth_mode=forgot_password" target="_self">忘记密码？</a></div>',
+                        unsafe_allow_html=True,
+                    )
+                login_submitted = st.form_submit_button("登录并进入", use_container_width=True)
+            if login_submitted:
                 user = authenticate_user(email.strip(), password)
                 if user is None:
                     st.error("邮箱或密码不正确。")
                 else:
                     st.session_state.user = user
+                    st.session_state.auth_session_token = create_login_session(user["id"])
+                    st.session_state.pending_login_cookie_token = st.session_state.auth_session_token
                     st.rerun()
 
             st.write("新用户第一次来这里？")
             st.button(
                 "去注册",
-                on_click=lambda: st.session_state.update({"auth_mode": "register"}),
+                on_click=set_auth_mode,
+                args=("register",),
                 use_container_width=True,
             )
-        else:
+        elif st.session_state.auth_mode == "register":
             st.subheader("新用户注册")
             st.caption("创建一个账号，TastePilot 就能开始记住你的口味。")
             with st.form("register_form", clear_on_submit=False):
@@ -876,14 +1087,62 @@ def render_auth_screen() -> None:
                     st.error(str(exc))
                 else:
                     st.session_state.user = {"id": user_id, "nickname": nickname.strip(), "email": email.strip()}
+                    st.session_state.auth_session_token = create_login_session(user_id)
+                    st.session_state.pending_login_cookie_token = st.session_state.auth_session_token
                     st.success("注册成功。现在可以开始选今晚吃什么了。")
                     st.rerun()
 
             st.write("已经注册过了？")
             st.button(
                 "返回登录",
-                on_click=lambda: st.session_state.update({"auth_mode": "login"}),
+                on_click=set_auth_mode,
+                args=("login",),
                 use_container_width=True,
+            )
+        else:
+            st.subheader("找回密码")
+            st.caption("输入注册邮箱，我们会发一个验证码给你，用它来重新设置密码。")
+
+            if st.session_state.reset_notice:
+                st.info(st.session_state.reset_notice)
+            if st.session_state.reset_debug_code:
+                st.warning(f"当前未配置邮件服务，调试验证码：{st.session_state.reset_debug_code}")
+            if st.session_state.reset_email:
+                st.caption(f"当前验证码绑定邮箱：{st.session_state.reset_email}")
+
+            with st.form("send_reset_code_form", clear_on_submit=False):
+                reset_email = st.text_input("注册邮箱", placeholder="you@example.com")
+                send_code_submitted = st.form_submit_button("发送验证码", use_container_width=True)
+            if send_code_submitted:
+                send_reset_code(reset_email)
+                st.rerun()
+
+            with st.form("reset_password_form", clear_on_submit=False):
+                verify_code = st.text_input("邮箱验证码", placeholder="6 位数字")
+                new_password = st.text_input("设置新密码", type="password")
+                reset_submitted = st.form_submit_button("重置密码", use_container_width=True)
+            if reset_submitted:
+                if not st.session_state.reset_email:
+                    st.error("请先输入注册邮箱并发送验证码。")
+                    return
+                success, message = reset_password_with_code(
+                    st.session_state.reset_email.strip(),
+                    verify_code.strip(),
+                    new_password,
+                )
+                if success:
+                    st.session_state.reset_notice = ""
+                    st.session_state.reset_debug_code = ""
+                    st.session_state.reset_email = ""
+                    st.session_state.auth_notice = message
+                    st.session_state.auth_mode = "login"
+                    st.rerun()
+                else:
+                    st.error(message)
+
+            st.markdown(
+                '<div class="auth-inline-link"><a href="/" target="_self">返回登录</a></div>',
+                unsafe_allow_html=True,
             )
     st.markdown("</div></div>", unsafe_allow_html=True)
 
@@ -919,6 +1178,9 @@ def render_sidebar(preferences: dict) -> None:
                 st.write(line)
         else:
             st.write("你还没有保存偏好。")
+        if st.session_state.preference_notice:
+            st.success(st.session_state.preference_notice)
+            st.session_state.preference_notice = ""
 
         with st.expander("修改偏好", expanded=False):
             flavor_options = ["香辣", "酸甜", "清淡", "蒜香", "鲜香", "重口", "家常", "酱香"]
@@ -939,18 +1201,21 @@ def render_sidebar(preferences: dict) -> None:
                 submitted = st.form_submit_button("保存偏好")
 
             if submitted:
+                payload = {
+                    "favorite_flavors": "|".join(favorite_flavors),
+                    "disliked_ingredients": disliked_ingredients.strip(),
+                    "diet_goal": diet_goal,
+                    "budget_level": budget_level,
+                    "cooking_time_limit": cooking_time_limit,
+                    "vegetarian_preference": vegetarian_preference,
+                }
                 save_user_preferences(
                     st.session_state.user["id"],
-                    {
-                        "favorite_flavors": "|".join(favorite_flavors),
-                        "disliked_ingredients": disliked_ingredients.strip(),
-                        "diet_goal": diet_goal,
-                        "budget_level": budget_level,
-                        "cooking_time_limit": cooking_time_limit,
-                        "vegetarian_preference": vegetarian_preference,
-                    },
+                    payload,
                 )
-                st.success("偏好已更新。")
+                preferences.update(payload)
+                st.session_state.preference_notice = "偏好已更新。"
+                st.rerun()
 
         st.markdown("---")
         favorites = get_favorite_recipes(user_id)
@@ -1294,6 +1559,10 @@ def render_follow_up_actions(preferences: dict) -> None:
 
 
 def main() -> None:
+    sync_auth_mode_from_query()
+    restore_login_session()
+    sync_login_cookie()
+
     if st.session_state.user is None:
         render_auth_screen()
         return
