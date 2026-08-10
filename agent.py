@@ -65,6 +65,77 @@ def _detect_required_flavors(text: str, flavors: list[str]) -> list[str]:
     return list(dict.fromkeys(required))
 
 
+def _build_display_hints(result: dict) -> list[str]:
+    hints = list(dict.fromkeys(result.get("recognized_hints", [])))
+    if not hints:
+        return []
+
+    replacement_map = {
+        "偏甜点": "甜品点心",
+        "偏饮品": "饮品",
+        "偏正餐": "正餐",
+        "偏轻食": "轻食早午餐",
+        "偏热食": "热乎",
+        "偏苦香": "苦香",
+    }
+    hints = [replacement_map.get(hint, hint) for hint in hints]
+
+    suppressions = {
+        "甜品点心": {"甜品", "甜品烘焙", "甜点", "偏甜点"},
+        "饮品": {"饮品特调", "偏饮品"},
+        "咖啡": {"茶饮"},
+        "奶茶": {"茶饮"},
+        "果茶": {"茶饮"},
+        "轻食早午餐": {"轻食", "偏轻食"},
+        "正餐主食": {"正餐", "偏正餐"},
+        "家常菜肴": {"菜肴", "中式家常", "偏正餐"},
+        "汤锅粥羹": {"汤粥", "锅物", "汤面", "汤锅", "偏热食"},
+    }
+    present = set(hints)
+    suppressed = set()
+    for parent, children in suppressions.items():
+        if parent in present:
+            suppressed.update(children)
+
+    compacted = []
+    for hint in hints:
+        if hint in suppressed:
+            continue
+        if hint.startswith("需要同时满足"):
+            continue
+        if hint.startswith("心情:"):
+            hint = hint.replace("心情:", "")
+        if hint not in compacted:
+            compacted.append(hint)
+
+    priority_groups = [
+        result.get("required_flavors", []),
+        result.get("favorite_flavors", []),
+        [result["scene"]] if result.get("scene") else [],
+        [result["diet_goal"]] if result.get("diet_goal") else [],
+        result.get("beverage_categories", []),
+        result.get("staple_categories", []),
+        result.get("cuisine_groups", []),
+        result.get("main_types", []),
+        compacted,
+    ]
+
+    display_hints = []
+    for group in priority_groups:
+        for hint in group:
+            if hint in suppressed:
+                continue
+            if hint.startswith("需要同时满足"):
+                continue
+            if hint not in display_hints:
+                display_hints.append(hint)
+            max_hints = 4 if result.get("required_flavors") or len(result.get("staple_categories", [])) > 1 else 3
+            if len(display_hints) >= max_hints:
+                return display_hints
+
+    return display_hints
+
+
 def _base_parse(user_text: str) -> dict:
     text = user_text.strip().replace(" ", "")
     if not text:
@@ -259,6 +330,8 @@ def analyze_dining_request(user_text: str) -> dict:
     avoid_course_types = result.get("avoid_course_types", [])
     intent_tags = []
     primary_bucket = None
+    main_types = []
+    staple_categories = []
     beverage_categories = []
     solar_terms = []
     cuisine_groups = []
@@ -346,9 +419,41 @@ def analyze_dining_request(user_text: str) -> dict:
         "甜品烘焙": ["甜品", "烘焙", "西点"],
         "饮品特调": ["饮品", "饮料"],
     }
+    main_type_keyword_map = {
+        "正餐主食": ["主食", "吃饭", "饱腹", "顶饱"],
+        "家常菜肴": ["菜", "菜肴", "热菜", "炒菜", "家常菜", "下饭菜"],
+        "汤锅粥羹": ["汤", "粥", "锅", "火锅", "汤锅", "汤面", "暖胃"],
+        "轻食早午餐": ["轻食", "早午餐", "brunch", "沙拉"],
+        "甜品点心": ["甜品", "甜点", "点心", "小蛋糕", "下午茶", "茶点"],
+        "饮品": ["饮品", "饮料", "喝点", "喝"],
+    }
+    staple_keyword_map = {
+        "饭类": ["饭", "米饭", "盖饭", "炒饭", "拌饭", "烩饭", "焗饭", "丼", "饭团"],
+        "面类": ["面", "面条", "拉面", "乌冬", "意面", "凉面", "拌面"],
+        "粉类": ["粉", "米粉", "米线", "河粉", "酸辣粉", "凉粉", "炒粉"],
+        "饼类": ["饼", "卷饼", "蛋饼", "煎饼", "披萨", "馅饼", "饺子", "馄饨"],
+        "汤粥": ["汤", "粥", "羹"],
+        "锅物": ["锅", "火锅", "汤锅", "部队锅"],
+        "面包三明治": ["三明治", "汉堡", "吐司", "贝果", "热狗", "可颂"],
+        "轻食": ["轻食", "沙拉", "藜麦碗", "酸奶杯"],
+        "甜品": ["甜品", "甜点", "蛋糕", "布丁", "司康", "冰淇淋"],
+        "饮品": ["饮品", "饮料", "咖啡", "奶茶", "果茶", "茶饮", "果汁"],
+    }
     for beverage_type, keywords in beverage_keyword_map.items():
         if _any_positive_keyword(text, keywords):
             beverage_categories.append(beverage_type)
+    for main_type, keywords in main_type_keyword_map.items():
+        if _any_positive_keyword(text, keywords):
+            main_types.append(main_type)
+            result["recognized_hints"].append(main_type)
+    for staple_category, keywords in staple_keyword_map.items():
+        if staple_category == "饭类" and "下饭" in text and not _any_positive_keyword(
+            text, [keyword for keyword in keywords if keyword != "饭"]
+        ):
+            continue
+        if _any_positive_keyword(text, keywords):
+            staple_categories.append(staple_category)
+            result["recognized_hints"].append(staple_category)
     for cuisine_group, keywords in cuisine_keyword_map.items():
         if _any_positive_keyword(text, keywords):
             cuisine_groups.append(cuisine_group)
@@ -513,6 +618,8 @@ def analyze_dining_request(user_text: str) -> dict:
     result["avoid_course_types"] = list(dict.fromkeys(avoid_course_types))
     result["intent_tags"] = list(dict.fromkeys(intent_tags))
     result["beverage_categories"] = list(dict.fromkeys(beverage_categories))
+    result["main_types"] = list(dict.fromkeys(main_types))
+    result["staple_categories"] = list(dict.fromkeys(staple_categories))
     result["solar_terms"] = list(dict.fromkeys(solar_terms))
     result["cuisine_groups"] = list(dict.fromkeys(cuisine_groups))
     if result.get("mood_search_tags"):
@@ -522,6 +629,7 @@ def analyze_dining_request(user_text: str) -> dict:
     if primary_bucket:
         result["primary_bucket"] = primary_bucket
     result["recognized_hints"] = list(dict.fromkeys(result.get("recognized_hints", [])))
+    result["display_hints"] = _build_display_hints(result)
 
     if not result["recognized_hints"]:
         return {}

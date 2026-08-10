@@ -19,6 +19,7 @@ from db import (
 from recipe_taxonomy import (
     build_display_tags,
     classify_beverage_category,
+    classify_main_type,
     classify_staple_category,
     get_recipe_profile_tags,
     SOLAR_TERMS,
@@ -269,14 +270,30 @@ def _profile_bonus(recipe: dict, request: dict, profile: dict | None) -> tuple[f
 
 def matches_primary_bucket(recipe: dict, primary_bucket: str) -> bool:
     feature_tags = get_recipe_feature_tags(recipe)
+    main_type = recipe.get("main_type") or classify_main_type(recipe)
     mapping = {
+        "drink": {"饮品"},
+        "dessert": {"甜品点心"},
+        "main": {"正餐主食", "家常菜肴", "汤锅粥羹"},
+        "staple": {"正餐主食"},
+        "dish": {"家常菜肴"},
+        "soup_hotpot": {"汤锅粥羹"},
+        "light_meal": {"轻食早午餐"},
+    }
+    target_main_types = mapping.get(primary_bucket, set())
+    if main_type in target_main_types:
+        return True
+
+    fallback_tags = {
         "drink": {"饮品"},
         "dessert": {"甜品", "甜点心", "下午茶", "茶点"},
         "main": {"正餐", "轻正餐", "汤面", "汤锅", "热食", "早午餐"},
+        "staple": {"正餐", "主食", "饭类", "面类", "粉类", "饼类"},
+        "dish": {"正餐", "下饭", "家常", "热食"},
+        "soup_hotpot": {"汤面", "汤锅", "汤品", "暖胃"},
         "light_meal": {"轻食", "轻正餐", "早午餐"},
-    }
-    target_tags = mapping.get(primary_bucket, set())
-    return bool(target_tags.intersection(feature_tags))
+    }.get(primary_bucket, set())
+    return bool(fallback_tags.intersection(feature_tags))
 
 
 def infer_course_types(recipe: dict) -> list[str]:
@@ -285,6 +302,7 @@ def infer_course_types(recipe: dict) -> list[str]:
     scene_tags = parse_tags(recipe.get("scene_tags", ""))
     flavor_tags = parse_tags(recipe.get("flavor_tags", ""))
     staple_category = recipe.get("staple_category") or classify_staple_category(recipe)
+    main_type = recipe.get("main_type") or classify_main_type(recipe)
 
     course_types = []
     dessert_keywords = ["蛋糕", "布丁", "甜品", "派", "司康", "奶冻", "千层", "甘露", "盒子", "糯米饭"]
@@ -292,15 +310,15 @@ def infer_course_types(recipe: dict) -> list[str]:
     light_keywords = ["沙拉", "藜麦", "吐司", "酸奶杯"]
     savory_keywords = ["饭", "面", "锅", "汤", "豆腐", "牛肉", "鸡翅", "乌冬"]
 
-    if staple_category == "甜品" or "下午茶" in scene_tags or "甜品" in cuisine or "烘焙" in cuisine or any(
+    if main_type == "甜品点心" or staple_category == "甜品" or "下午茶" in scene_tags or "甜品" in cuisine or "烘焙" in cuisine or any(
         keyword in name for keyword in dessert_keywords
     ):
         course_types.append("dessert")
-    if staple_category == "饮品" or any(keyword in name for keyword in drink_keywords):
+    if main_type == "饮品" or staple_category == "饮品" or any(keyword in name for keyword in drink_keywords):
         course_types.append("drink")
-    if staple_category == "轻食" or any(keyword in name for keyword in light_keywords):
+    if main_type == "轻食早午餐" or staple_category == "轻食" or any(keyword in name for keyword in light_keywords):
         course_types.append("light_meal")
-    if staple_category in {"饭类", "面类", "粉类", "饼类", "锅物", "汤粥", "面包三明治", "菜肴"} or any(
+    if main_type in {"正餐主食", "家常菜肴", "汤锅粥羹"} or staple_category in {"饭类", "面类", "粉类", "饼类", "锅物", "汤粥", "面包三明治", "菜肴"} or any(
         keyword in name for keyword in savory_keywords
     ) or "下饭解馋" in parse_tags(recipe.get("diet_tags", "")):
         course_types.extend(["main", "savory"])
@@ -346,6 +364,8 @@ def _merge_preference_query(query: dict, preferences: dict) -> dict:
     merged["mood_bucket"] = query.get("mood_bucket")
     merged["mood_detected"] = query.get("mood_detected")
     merged["beverage_categories"] = query.get("beverage_categories", [])
+    merged["main_types"] = query.get("main_types", [])
+    merged["staple_categories"] = query.get("staple_categories", [])
     merged["solar_terms"] = query.get("solar_terms", [])
     merged["cuisine_groups"] = query.get("cuisine_groups", [])
     return merged
@@ -371,6 +391,15 @@ def _contains_any_avoids(ingredients: str, disliked_ingredients: str) -> bool:
     return any(item in ingredient_text for item in avoids)
 
 
+def _matches_flavor_intent(recipe: dict, flavor: str) -> bool:
+    recipe_flavors = get_recipe_profile_tags(recipe)
+    if flavor in recipe_flavors:
+        return True
+    if flavor == "香辣" and int(recipe.get("is_spicy") or 0) == 1:
+        return True
+    return False
+
+
 def _score_recipe(recipe: dict, request: dict, favorite_counts: dict, skip_counts: dict) -> tuple[int, list[str]]:
     score = 0
     reasons = []
@@ -386,6 +415,13 @@ def _score_recipe(recipe: dict, request: dict, favorite_counts: dict, skip_count
     if flavor_overlap:
         score += 24 + 8 * min(len(flavor_overlap), 2)
         reasons.append(f"口味上贴近你偏好的 {'、'.join(flavor_overlap)}")
+
+    current_flavor_overlap = [
+        tag for tag in request.get("current_input_flavors", []) if _matches_flavor_intent(recipe, tag)
+    ]
+    if current_flavor_overlap:
+        score += 34 + 10 * min(len(current_flavor_overlap), 2)
+        reasons.insert(0, f"优先满足你这次想要的 {'、'.join(current_flavor_overlap)}")
 
     if request["scene"] in recipe_scenes:
         score += 20
@@ -535,14 +571,29 @@ def recommend_recipes(
     intent_tags = request.get("intent_tags", [])
     mood_search_tags = request.get("mood_search_tags", [])
     primary_bucket = request.get("primary_bucket")
+    main_types = request.get("main_types", [])
+    staple_categories = request.get("staple_categories", [])
     beverage_categories = request.get("beverage_categories", [])
     solar_terms = request.get("solar_terms", [])
     cuisine_groups = request.get("cuisine_groups", [])
     required_flavors = request.get("required_flavors", [])
+    current_input_flavors = request.get("current_input_flavors", [])
 
     recipes["course_types"] = recipes.apply(lambda row: infer_course_types(row.to_dict()), axis=1)
+    if "main_type" not in recipes.columns:
+        recipes["main_type"] = recipes.apply(lambda row: classify_main_type(row.to_dict()), axis=1)
     if "beverage_category" not in recipes.columns:
         recipes["beverage_category"] = recipes.apply(lambda row: classify_beverage_category(row.to_dict()), axis=1)
+
+    if main_types:
+        main_type_filtered = recipes[recipes["main_type"].isin(main_types)]
+        if not main_type_filtered.empty:
+            recipes = main_type_filtered.copy()
+
+    if staple_categories:
+        staple_filtered = recipes[recipes["staple_category"].isin(staple_categories)]
+        if not staple_filtered.empty:
+            recipes = staple_filtered.copy()
 
     if primary_bucket:
         strict_bucket = recipes[
@@ -561,8 +612,23 @@ def recommend_recipes(
         if not cuisine_filtered.empty:
             recipes = cuisine_filtered.copy()
 
-    if required_flavors:
+    if current_input_flavors:
         recipes["profile_flavor_tags"] = recipes.apply(lambda row: get_recipe_profile_tags(row.to_dict()), axis=1)
+        flavor_intent_filtered = recipes[
+            recipes.apply(
+                lambda row: any(
+                    _matches_flavor_intent(row.to_dict(), flavor)
+                    for flavor in current_input_flavors
+                ),
+                axis=1,
+            )
+        ]
+        if len(flavor_intent_filtered) >= max(limit, 3):
+            recipes = flavor_intent_filtered.copy()
+
+    if required_flavors:
+        if "profile_flavor_tags" not in recipes.columns:
+            recipes["profile_flavor_tags"] = recipes.apply(lambda row: get_recipe_profile_tags(row.to_dict()), axis=1)
         flavor_filtered = recipes[
             recipes["profile_flavor_tags"].apply(
                 lambda tags: all(required_flavor in tags for required_flavor in required_flavors)

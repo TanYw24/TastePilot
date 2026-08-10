@@ -74,6 +74,24 @@ def classify_staple_category(recipe: dict) -> str:
     return "菜肴"
 
 
+def classify_main_type(recipe: dict) -> str:
+    staple_category = recipe.get("staple_category") or classify_staple_category(recipe)
+    feature_tags = parse_tags(recipe.get("feature_tags", ""))
+    cuisine = str(recipe.get("cuisine", ""))
+
+    if staple_category == "饮品" or "饮品" in feature_tags or cuisine == "饮品":
+        return "饮品"
+    if staple_category == "甜品" or "甜品" in feature_tags or "甜点心" in feature_tags or cuisine in {"甜品", "烘焙"}:
+        return "甜品点心"
+    if staple_category == "轻食" or "轻食" in feature_tags or "早午餐" in feature_tags or cuisine in {"轻食", "早午餐"}:
+        return "轻食早午餐"
+    if staple_category in {"汤粥", "锅物"} or "汤面" in feature_tags or "汤锅" in feature_tags or "汤品" in feature_tags:
+        return "汤锅粥羹"
+    if staple_category in {"饭类", "面类", "粉类", "饼类", "面包三明治"}:
+        return "正餐主食"
+    return "家常菜肴"
+
+
 def classify_cuisine_group(recipe: dict) -> str:
     cuisine = str(recipe.get("cuisine", ""))
     name = str(recipe.get("name", ""))
@@ -159,6 +177,7 @@ def get_recipe_profile_tags(recipe: dict) -> list[str]:
 
 def build_display_tags(recipe: dict) -> list[str]:
     tags = [
+        recipe.get("main_type") or classify_main_type(recipe),
         recipe.get("staple_category") or classify_staple_category(recipe),
         recipe.get("cuisine_group") or classify_cuisine_group(recipe),
     ]

@@ -25,6 +25,7 @@ RECIPE_COLUMNS = [
     "id",
     "name",
     "cuisine",
+    "main_type",
     "staple_category",
     "cuisine_group",
     "beverage_category",
@@ -291,6 +292,7 @@ def init_postgres_db() -> None:
                 id BIGINT PRIMARY KEY,
                 name TEXT NOT NULL,
                 cuisine TEXT NOT NULL,
+                main_type TEXT,
                 staple_category TEXT,
                 cuisine_group TEXT,
                 beverage_category TEXT,
@@ -324,9 +326,15 @@ def init_postgres_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_profile_feedback_user_id ON profile_feedback(user_id)
             """
         )
+        connection.execute("ALTER TABLE recipes ADD COLUMN IF NOT EXISTS main_type TEXT")
         connection.execute(
             """
             CREATE INDEX IF NOT EXISTS idx_recipes_cuisine_group ON recipes(cuisine_group)
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_recipes_main_type ON recipes(main_type)
             """
         )
 
@@ -933,6 +941,8 @@ def get_preference_summary(preferences: dict) -> list[str]:
 
 
 def _normalize_recipe_row(row: dict[str, Any]) -> dict[str, Any]:
+    from recipe_taxonomy import classify_main_type
+
     normalized = {}
     for column in RECIPE_COLUMNS:
         value = row.get(column)
@@ -941,6 +951,8 @@ def _normalize_recipe_row(row: dict[str, Any]) -> dict[str, Any]:
         if column in {"id", "cook_time_minutes", "is_spicy", "is_vegetarian"} and value is not None:
             value = int(value)
         normalized[column] = value
+    if not normalized.get("main_type"):
+        normalized["main_type"] = classify_main_type(normalized)
     return normalized
 
 
@@ -969,7 +981,7 @@ def get_all_recipes() -> list[dict[str, Any]]:
             rows = connection.execute(
                 f"SELECT {', '.join(RECIPE_COLUMNS)} FROM recipes ORDER BY id"
             ).fetchall()
-        return [dict(row) for row in rows]
+        return [_normalize_recipe_row(dict(row)) for row in rows]
     return get_recipes_from_sqlite()
 
 
@@ -980,7 +992,7 @@ def get_recipe_record_by_id(recipe_id: int) -> dict[str, Any] | None:
                 f"SELECT {', '.join(RECIPE_COLUMNS)} FROM recipes WHERE id = %s",
                 (recipe_id,),
             ).fetchone()
-        return dict(row) if row else None
+        return _normalize_recipe_row(dict(row)) if row else None
 
     for recipe in get_recipes_from_sqlite():
         if recipe["id"] == recipe_id:
@@ -998,16 +1010,17 @@ def import_recipes_csv_to_postgres() -> int:
             connection.execute(
                 """
                 INSERT INTO recipes (
-                    id, name, cuisine, staple_category, cuisine_group, beverage_category,
+                    id, name, cuisine, main_type, staple_category, cuisine_group, beverage_category,
                     flavor_tags, scene_tags, diet_tags, feature_tags, budget_level,
                     cook_time_minutes, difficulty, ingredients, is_spicy, is_vegetarian,
                     calorie_level, description
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
                 ON CONFLICT (id) DO UPDATE SET
                     name = EXCLUDED.name,
                     cuisine = EXCLUDED.cuisine,
+                    main_type = EXCLUDED.main_type,
                     staple_category = EXCLUDED.staple_category,
                     cuisine_group = EXCLUDED.cuisine_group,
                     beverage_category = EXCLUDED.beverage_category,

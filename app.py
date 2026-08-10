@@ -386,6 +386,120 @@ st.markdown(
         margin: 0 0.35rem 0.35rem 0;
         border: 1px solid rgba(189, 122, 81, 0.2);
     }
+    .main-type-card {
+        padding: 1rem 1.12rem 0.78rem;
+        border-radius: 24px;
+        background: linear-gradient(180deg, rgba(255, 251, 246, 0.78), rgba(255, 245, 236, 0.58));
+        border: 1px solid rgba(219, 176, 141, 0.34);
+        box-shadow:
+            0 12px 26px rgba(149, 97, 63, 0.055),
+            inset 0 1px 0 rgba(255, 255, 255, 0.34);
+        color: #6b4530;
+        margin: 0.74rem 0 0.72rem;
+    }
+    .main-type-title {
+        color: #8a3728;
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+    }
+    .main-type-copy {
+        color: rgba(107, 69, 48, 0.72);
+        font-size: 0.88rem;
+        line-height: 1.55;
+        margin-bottom: 0.42rem;
+    }
+    .main-type-warning {
+        color: rgba(138, 55, 40, 0.84);
+        font-weight: 650;
+        font-size: 0.9rem;
+        margin: 0.28rem 0 0.2rem;
+    }
+    .st-key-selected_main_types div[data-baseweb="select"] > div,
+    .st-key-selected_main_types div[data-baseweb="select"] > div > div,
+    .st-key-main_type_picker div[data-baseweb="select"] > div,
+    .st-key-main_type_picker div[data-baseweb="select"] > div > div {
+        background: linear-gradient(180deg, rgba(255, 235, 214, 0.98), rgba(246, 203, 174, 0.9)) !important;
+        border: 1px solid rgba(203, 133, 89, 0.48) !important;
+        border-radius: 18px !important;
+        box-shadow:
+            0 10px 22px rgba(159, 95, 58, 0.105),
+            inset 0 1px 0 rgba(255, 255, 255, 0.46) !important;
+        color: #5e3b2a !important;
+    }
+    .st-key-selected_main_types div[data-baseweb="tag"],
+    .st-key-main_type_picker div[data-baseweb="tag"] {
+        background: linear-gradient(180deg, rgba(255, 230, 204, 0.98) 0%, rgba(236, 151, 104, 0.92) 100%) !important;
+        color: #7a3423 !important;
+        border: 1px solid rgba(188, 104, 62, 0.34) !important;
+        border-radius: 999px !important;
+        box-shadow:
+            0 8px 18px rgba(177, 94, 57, 0.12),
+            inset 0 1px 0 rgba(255, 255, 255, 0.38) !important;
+        font-weight: 700 !important;
+    }
+    .st-key-selected_main_types div[data-baseweb="tag"] span,
+    .st-key-selected_main_types div[data-baseweb="tag"] svg,
+    .st-key-selected_main_types div[data-baseweb="tag"] path,
+    .st-key-selected_main_types [class*="multiValue"],
+    .st-key-main_type_picker div[data-baseweb="tag"] span,
+    .st-key-main_type_picker div[data-baseweb="tag"] svg,
+    .st-key-main_type_picker div[data-baseweb="tag"] path,
+    .st-key-main_type_picker [class*="multiValue"] {
+        color: #7a3423 !important;
+        fill: #7a3423 !important;
+    }
+    .st-key-selected_main_types div[data-baseweb="select"] svg,
+    .st-key-selected_main_types div[data-baseweb="select"] path,
+    .st-key-main_type_picker div[data-baseweb="select"] svg,
+    .st-key-main_type_picker div[data-baseweb="select"] path {
+        color: #8a4d2b !important;
+        fill: #8a4d2b !important;
+    }
+    .st-key-selected_main_types div[data-baseweb="select"] input::placeholder,
+    .st-key-main_type_picker div[data-baseweb="select"] input::placeholder {
+        color: rgba(94, 59, 42, 0.78) !important;
+        opacity: 1 !important;
+    }
+    .st-key-selected_main_types div[data-baseweb="select"] [class*="placeholder"],
+    .st-key-selected_main_types div[data-baseweb="select"] [class*="Placeholder"],
+    .st-key-main_type_picker div[data-baseweb="select"] [class*="placeholder"],
+    .st-key-main_type_picker div[data-baseweb="select"] [class*="Placeholder"] {
+        color: rgba(94, 59, 42, 0.78) !important;
+        -webkit-text-fill-color: rgba(94, 59, 42, 0.78) !important;
+    }
+    div[data-baseweb="popover"],
+    div[data-baseweb="popover"] > div,
+    div[data-baseweb="popover"] ul,
+    div[data-baseweb="popover"] ul[role="listbox"],
+    div[data-baseweb="popover"] [data-baseweb="menu"],
+    div[data-baseweb="popover"] [role="listbox"] {
+        background: linear-gradient(180deg, rgba(255, 247, 237, 0.98), rgba(249, 226, 207, 0.96)) !important;
+        border: 1px solid rgba(203, 133, 89, 0.38) !important;
+        box-shadow: 0 14px 28px rgba(101, 63, 43, 0.16) !important;
+    }
+    div[data-baseweb="popover"] li,
+    div[data-baseweb="popover"] [role="option"] {
+        color: #6b3f2a !important;
+        background: transparent !important;
+    }
+    div[data-baseweb="popover"] li *,
+    div[data-baseweb="popover"] [role="option"] * {
+        color: #6b3f2a !important;
+        -webkit-text-fill-color: #6b3f2a !important;
+    }
+    div[data-baseweb="popover"] li:hover,
+    div[data-baseweb="popover"] [role="option"]:hover,
+    div[data-baseweb="popover"] li[aria-selected="true"],
+    div[data-baseweb="popover"] [aria-selected="true"] {
+        background: rgba(232, 151, 104, 0.18) !important;
+        color: #7a3423 !important;
+    }
+    .st-key-selected_main_types input,
+    .st-key-main_type_picker input {
+        color: #5e3b2a !important;
+        -webkit-text-fill-color: #5e3b2a !important;
+    }
     .selected-tags-label {
         color: rgba(138, 55, 40, 0.72);
         font-weight: 600;
@@ -517,6 +631,17 @@ st.markdown(
         }
         .selected-skill-button div[data-testid="stButton"] > button p {
             font-size: 0.78rem;
+        }
+        .main-type-card {
+            padding: 0.86rem 0.92rem 0.68rem;
+            margin: 0.58rem 0 0.54rem;
+        }
+        .main-type-title {
+            font-size: 0.94rem;
+        }
+        .main-type-copy,
+        .main-type-warning {
+            font-size: 0.8rem;
         }
         .st-key-prompt_actions {
             margin-top: -4.6rem !important;
@@ -1026,6 +1151,41 @@ MOOD_SKILL_GROUP = (
 )
 
 
+MAIN_TYPE_OPTIONS = ["正餐主食", "家常菜肴", "汤锅粥羹", "轻食早午餐", "甜品点心", "饮品"]
+MAIN_TYPE_HELP = {
+    "正餐主食": "饭、面、粉、饼、三明治等更顶饱的一餐",
+    "家常菜肴": "炒菜、热菜、冷盘、下饭菜等菜肴本身",
+    "汤锅粥羹": "汤、粥、锅物、汤面等热乎带汤的方向",
+    "轻食早午餐": "沙拉、能量碗、早午餐、轻正餐",
+    "甜品点心": "甜品、烘焙、茶点、小点心",
+    "饮品": "咖啡、奶茶、果茶、茶饮和特调",
+}
+MAIN_TYPE_COURSE_TYPES = {
+    "正餐主食": {"main", "savory"},
+    "家常菜肴": {"main", "savory"},
+    "汤锅粥羹": {"main", "savory"},
+    "轻食早午餐": {"light_meal"},
+    "甜品点心": {"dessert", "snack", "sweet"},
+    "饮品": {"drink"},
+}
+MAIN_TYPE_PRIMARY_BUCKET = {
+    "正餐主食": "staple",
+    "家常菜肴": "dish",
+    "汤锅粥羹": "soup_hotpot",
+    "轻食早午餐": "light_meal",
+    "甜品点心": "dessert",
+    "饮品": "drink",
+}
+MAIN_TYPE_STAPLE_COMPATIBILITY = {
+    "正餐主食": {"饭类", "面类", "粉类", "饼类", "面包三明治"},
+    "家常菜肴": {"菜肴"},
+    "汤锅粥羹": {"汤粥", "锅物", "面类"},
+    "轻食早午餐": {"轻食", "面包三明治", "饭类"},
+    "甜品点心": {"甜品"},
+    "饮品": {"饮品"},
+}
+
+
 SKILL_APPEND_TEXT = {
     "香辣": "想吃辣一点",
     "清淡": "清淡一点",
@@ -1070,6 +1230,10 @@ if "prompt_text_input" not in st.session_state:
     st.session_state.prompt_text_input = st.session_state.prompt_text
 if "selected_skills" not in st.session_state:
     st.session_state.selected_skills = []
+if "selected_main_types" not in st.session_state:
+    st.session_state.selected_main_types = []
+if "main_type_notice" not in st.session_state:
+    st.session_state.main_type_notice = ""
 if "recommendations" not in st.session_state:
     st.session_state.recommendations = []
 if "last_query" not in st.session_state:
@@ -1315,6 +1479,8 @@ def logout() -> None:
     st.session_state.prompt_text = ""
     st.session_state.prompt_text_input = ""
     st.session_state.selected_skills = []
+    st.session_state.selected_main_types = []
+    st.session_state.main_type_notice = ""
     st.session_state.recommendations = []
     st.session_state.last_query = {}
     st.session_state.excluded_recipe_ids = []
@@ -1354,6 +1520,8 @@ def clear_prompt() -> None:
     st.session_state.prompt_text = ""
     st.session_state.prompt_text_input = ""
     st.session_state.selected_skills = []
+    st.session_state.selected_main_types = []
+    st.session_state.main_type_notice = ""
     st.session_state.recommendations = []
     st.session_state.last_query = {}
     st.session_state.excluded_recipe_ids = []
@@ -1366,6 +1534,13 @@ def open_profile_page() -> None:
 
 def open_recommend_page() -> None:
     st.session_state.current_page = "recommend"
+
+
+def on_main_type_change() -> None:
+    st.session_state.main_type_notice = ""
+    st.session_state.recommendations = []
+    st.session_state.last_query = {}
+    st.session_state.excluded_recipe_ids = []
 
 
 def submit_profile_feedback(profile_type: str, profile_value: str, feedback_type: str) -> None:
@@ -2014,38 +2189,120 @@ def build_query_from_prompt(preferences: dict, prompt_override: str | None = Non
     prompt_text = (prompt_override if prompt_override is not None else st.session_state.prompt_text_input).strip()
     st.session_state.prompt_text = prompt_text
     parsed = parse_free_text_request(prompt_text)
+    selected_main_types = st.session_state.get("selected_main_types", [])
+    parsed_main_types = parsed.get("main_types", [])
+    conflicting_main_types = [
+        main_type for main_type in parsed_main_types if main_type not in selected_main_types
+    ] if selected_main_types else []
+    has_main_type_conflict = bool(conflicting_main_types)
+    selected_course_types = set()
+    compatible_staple_categories = set()
+    for main_type in selected_main_types:
+        selected_course_types.update(MAIN_TYPE_COURSE_TYPES.get(main_type, set()))
+        compatible_staple_categories.update(MAIN_TYPE_STAPLE_COMPATIBILITY.get(main_type, set()))
+
+    if selected_main_types:
+        main_types = list(dict.fromkeys(selected_main_types))
+        preferred_course_types = list(selected_course_types)
+        avoid_course_types = [] if has_main_type_conflict else [
+            course_type
+            for course_type in parsed.get("avoid_course_types", [])
+            if course_type not in selected_course_types
+        ]
+        staple_categories = [] if has_main_type_conflict else [
+            category
+            for category in parsed.get("staple_categories", [])
+            if category in compatible_staple_categories
+        ]
+        beverage_categories = [] if has_main_type_conflict else (
+            parsed.get("beverage_categories", []) if "饮品" in selected_main_types else []
+        )
+        selected_primary_buckets = [
+            MAIN_TYPE_PRIMARY_BUCKET[main_type]
+            for main_type in selected_main_types
+            if main_type in MAIN_TYPE_PRIMARY_BUCKET
+        ]
+        primary_bucket = selected_primary_buckets[0] if len(selected_primary_buckets) == 1 else None
+    else:
+        main_types = parsed.get("main_types", [])
+        preferred_course_types = parsed.get("preferred_course_types", [])
+        avoid_course_types = parsed.get("avoid_course_types", [])
+        staple_categories = parsed.get("staple_categories", [])
+        beverage_categories = parsed.get("beverage_categories", [])
+        primary_bucket = parsed.get("primary_bucket")
+
     preferred_flavors = list(
         dict.fromkeys(
             [item for item in preferences.get("favorite_flavors", "").split("|") if item]
-            + parsed.get("favorite_flavors", [])
+            + ([] if has_main_type_conflict else parsed.get("favorite_flavors", []))
         )
     )
+    conflict_display_hints = []
+    if has_main_type_conflict:
+        conflict_display_hints = [
+            f"大类冲突：已按{'、'.join(selected_main_types)}推荐",
+            f"输入提到{'、'.join(conflicting_main_types)}",
+            "本轮随机看同大类菜谱",
+        ]
+        parsed["display_hints"] = conflict_display_hints
+        parsed["recognized_hints"] = conflict_display_hints
+
     query = {
-        "scene": parsed.get("scene", ""),
+        "scene": "" if has_main_type_conflict else parsed.get("scene", ""),
         "favorite_flavors": preferred_flavors,
-        "required_flavors": parsed.get("required_flavors", []),
-        "diet_goal": parsed.get("diet_goal", ""),
+        "required_flavors": [] if has_main_type_conflict else parsed.get("required_flavors", []),
+        "diet_goal": "" if has_main_type_conflict else parsed.get("diet_goal", ""),
         "budget_level": parsed.get("budget_level", preferences.get("budget_level", "中等预算")),
         "cooking_time_limit": parsed.get("cooking_time_limit", preferences.get("cooking_time_limit", "30 分钟内")),
         "vegetarian_preference": parsed.get("vegetarian_preference", preferences.get("vegetarian_preference", "不限")),
         "disliked_ingredients": "、".join(
             filter(None, [preferences.get("disliked_ingredients", ""), parsed.get("disliked_ingredients", "")])
         ),
-        "preferred_course_types": parsed.get("preferred_course_types", []),
-        "avoid_course_types": parsed.get("avoid_course_types", []),
-        "intent_tags": parsed.get("intent_tags", []),
-        "mood_search_tags": parsed.get("mood_search_tags", []),
-        "beverage_categories": parsed.get("beverage_categories", []),
-        "solar_terms": parsed.get("solar_terms", []),
-        "cuisine_groups": parsed.get("cuisine_groups", []),
-        "primary_bucket": parsed.get("primary_bucket"),
-        "mood_bucket": parsed.get("mood_bucket"),
-        "mood_detected": parsed.get("mood_detected"),
+        "preferred_course_types": preferred_course_types,
+        "avoid_course_types": avoid_course_types,
+        "intent_tags": [] if has_main_type_conflict else parsed.get("intent_tags", []),
+        "mood_search_tags": [] if has_main_type_conflict else parsed.get("mood_search_tags", []),
+        "beverage_categories": beverage_categories,
+        "main_types": main_types,
+        "staple_categories": staple_categories,
+        "solar_terms": [] if has_main_type_conflict else parsed.get("solar_terms", []),
+        "cuisine_groups": [] if has_main_type_conflict else parsed.get("cuisine_groups", []),
+        "primary_bucket": primary_bucket,
+        "mood_bucket": None if has_main_type_conflict else parsed.get("mood_bucket"),
+        "mood_detected": None if has_main_type_conflict else parsed.get("mood_detected"),
+        "main_type_conflict": has_main_type_conflict,
+        "conflicting_main_types": conflicting_main_types,
     }
     return query, parsed
 
 
+def build_display_hints_for_current_input(parsed: dict) -> tuple[list[str], bool]:
+    selected_main_types = st.session_state.get("selected_main_types", [])
+    parsed_main_types = parsed.get("main_types", [])
+    conflicting_main_types = [
+        main_type for main_type in parsed_main_types if main_type not in selected_main_types
+    ] if selected_main_types else []
+    if conflicting_main_types:
+        return (
+            [
+                f"大类冲突：已按{'、'.join(selected_main_types)}推荐",
+                f"输入提到{'、'.join(conflicting_main_types)}",
+                "本轮随机看同大类菜谱",
+            ],
+            True,
+        )
+    return parsed.get("display_hints") or parsed.get("recognized_hints", []), False
+
+
 def run_recommendation(preferences: dict, append_skill: str | None = None, replace_mode: bool = False) -> None:
+    if not st.session_state.get("selected_main_types"):
+        st.session_state.main_type_notice = "先选择至少一个大类，我再帮你把范围收准。"
+        st.session_state.recommendations = []
+        st.session_state.last_query = {}
+        st.session_state.excluded_recipe_ids = []
+        return
+
+    st.session_state.main_type_notice = ""
     prompt_override = None
     if append_skill:
         apply_skill(append_skill)
@@ -2211,12 +2468,30 @@ def render_input_area(preferences: dict) -> None:
         <div class="prompt-card">
             <div class="section-heading">告诉我你现在想吃什么</div>
             <div class="section-copy">
-                你可以直接输入一句模糊需求，比如“想吃热乎一点、别太贵、一个人吃”，
-                也可以先点下面的 skill，让我们更快接近今晚那道对的菜。
+                先选一个或多个大类，再输入一句模糊需求，比如“想吃热乎一点、别太贵、一个人吃”，
+                也可以点下面的 skill，让我们更快接近那道对的菜。
             </div>
         </div>
         """,
         unsafe_allow_html=True,
+    )
+    st.markdown(
+        """
+        <div class="main-type-card">
+            <div class="main-type-title">先选你想看的大类</div>
+            <div class="main-type-copy">可以多选。大类负责确定推荐池，口味、菜系、场景会作为标签继续精细排序。</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.multiselect(
+        "选择菜谱大类",
+        options=MAIN_TYPE_OPTIONS,
+        key="selected_main_types",
+        placeholder="例如：正餐主食、家常菜肴、饮品",
+        help="；".join(f"{name}：{MAIN_TYPE_HELP[name]}" for name in MAIN_TYPE_OPTIONS),
+        label_visibility="collapsed",
+        on_change=on_main_type_change,
     )
     st.text_area(
         "输入一句话",
@@ -2225,6 +2500,11 @@ def render_input_area(preferences: dict) -> None:
         height=110,
         label_visibility="collapsed",
     )
+    if st.session_state.main_type_notice or (
+        st.session_state.prompt_text_input.strip() and not st.session_state.selected_main_types
+    ):
+        notice = st.session_state.main_type_notice or "先选择至少一个大类，再告诉我具体想吃什么。"
+        st.markdown(f'<div class="main-type-warning">{notice}</div>', unsafe_allow_html=True)
 
     with st.container(key="prompt_skill_shell"):
         picker_col, selected_col = st.columns([0.095, 0.905], gap="small")
@@ -2283,16 +2563,18 @@ def render_input_area(preferences: dict) -> None:
         if st.session_state.prompt_text_input.strip()
         else {}
     )
-    if parsed.get("recognized_hints"):
-        st.info(f"我先帮你理解成：{'、'.join(parsed['recognized_hints'])}")
-        st.markdown(
-            f"""
-            <div class="section-note">
-                <strong>理解标签：</strong> {render_tag_pills(parsed['recognized_hints'])}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+    display_hints, has_main_type_conflict = build_display_hints_for_current_input(parsed)
+    if display_hints:
+        st.info(f"我先帮你理解成：{'、'.join(display_hints)}")
+        if not has_main_type_conflict:
+            st.markdown(
+                f"""
+                <div class="section-note">
+                    <strong>理解标签：</strong> {render_tag_pills(display_hints)}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
 
 def render_recipe_cards() -> None:
