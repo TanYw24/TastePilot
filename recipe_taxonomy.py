@@ -27,7 +27,7 @@ SOLAR_TERMS = [
     "大寒",
 ]
 
-CANONICAL_MAIN_TYPES = {"正餐", "轻食早午餐", "甜品", "饮品"}
+CANONICAL_MAIN_TYPES = {"正餐主食", "正餐菜品", "轻食早午餐", "甜品", "饮品"}
 CANONICAL_FOOD_ORIGINS = {"中式", "日式", "韩式", "东南亚", "西式", "拉美", "饮品特调"}
 CHINESE_REGIONAL_CUISINES = {
     "中式家常",
@@ -113,9 +113,10 @@ def normalize_seasonal_terms(recipe: dict) -> list[str]:
 def _canonicalize_main_type(value: str) -> str:
     mapping = {
         "正餐": "正餐",
-        "正餐主食": "正餐",
-        "家常菜肴": "正餐",
-        "汤锅粥羹": "正餐",
+        "正餐主食": "正餐主食",
+        "正餐菜品": "正餐菜品",
+        "家常菜肴": "正餐菜品",
+        "汤锅粥羹": "正餐菜品",
         "轻食早午餐": "轻食早午餐",
         "甜品": "甜品",
         "甜品点心": "甜品",
@@ -134,19 +135,23 @@ def _legacy_sub_type_value(recipe: dict) -> str:
 
 def classify_main_type(recipe: dict) -> str:
     current = _canonicalize_main_type(str(recipe.get("main_type", "")).strip())
-    if current:
+    if current and current != "正餐":
         return current
 
     sub_type = classify_sub_type(recipe)
-    if sub_type in {"饭类", "面类", "粉类", "饼类", "锅汤类", "菜肴类"}:
-        return "正餐"
+    if sub_type in {"饭类", "面类", "粉类", "饼类"}:
+        return "正餐主食"
+    if sub_type in {"锅汤类", "菜肴类"}:
+        return "正餐菜品"
     if sub_type in {"沙拉碗类", "三明治贝果类", "吐司卷饼类", "早餐碗类", "轻主食类"}:
         return "轻食早午餐"
     if sub_type in {"蛋糕类", "布丁冻品类", "中式甜品类", "冰品类", "烘焙点心类"}:
         return "甜品"
     if sub_type in {"咖啡类", "茶饮类", "奶茶类", "果饮类", "气泡饮类", "奶昔类", "热饮类"}:
         return "饮品"
-    return "正餐"
+    if current == "正餐":
+        return "正餐主食"
+    return "正餐主食"
 
 
 def classify_food_origin(recipe: dict) -> str:

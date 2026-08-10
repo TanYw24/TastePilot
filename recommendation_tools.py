@@ -36,12 +36,15 @@ _PROFILE_ACTION_WEIGHTS = {"favorite": 5.5, "view": 2.4, "skip": -3.8}
 _PROFILE_FEEDBACK_WEIGHTS = {"confirm": 4.5, "downvote": -5.5}
 _TIME_SLOT_LABELS = ["早餐", "午餐", "下午茶", "晚餐", "夜宵"]
 _LEGACY_MAIN_TYPE_MAP = {
-    "正餐主食": "正餐",
-    "家常菜肴": "正餐",
-    "汤锅粥羹": "正餐",
-    "轻食早午餐": "轻食早午餐",
-    "甜品点心": "甜品",
-    "饮品": "饮品",
+    "正餐": ["正餐主食", "正餐菜品"],
+    "正餐主食": ["正餐主食"],
+    "正餐菜品": ["正餐菜品"],
+    "家常菜肴": ["正餐菜品"],
+    "汤锅粥羹": ["正餐菜品"],
+    "轻食早午餐": ["轻食早午餐"],
+    "甜品点心": ["甜品"],
+    "甜品": ["甜品"],
+    "饮品": ["饮品"],
 }
 _LEGACY_STAPLE_MAP = {
     "饭类": {"饭类"},
@@ -140,7 +143,10 @@ def get_recipe_seasonal_terms(recipe: dict) -> list[str]:
 
 
 def _normalize_main_type_filters(values: list[str]) -> list[str]:
-    return list(dict.fromkeys(_LEGACY_MAIN_TYPE_MAP.get(value, value) for value in values if value))
+    normalized = []
+    for value in values:
+        normalized.extend(_LEGACY_MAIN_TYPE_MAP.get(value, [value]))
+    return list(dict.fromkeys(item for item in normalized if item))
 
 
 def _normalize_sub_type_filters(values: list[str]) -> list[str]:
@@ -361,10 +367,10 @@ def matches_primary_bucket(recipe: dict, primary_bucket: str) -> bool:
     mapping = {
         "drink": {"饮品"},
         "dessert": {"甜品"},
-        "main": {"正餐"},
-        "staple": {"正餐"},
-        "dish": {"正餐"},
-        "soup_hotpot": {"正餐"},
+        "main": {"正餐主食", "正餐菜品"},
+        "staple": {"正餐主食"},
+        "dish": {"正餐菜品"},
+        "soup_hotpot": {"正餐菜品"},
         "light_meal": {"轻食早午餐"},
     }
     target_main_types = mapping.get(primary_bucket, set())
@@ -374,9 +380,9 @@ def matches_primary_bucket(recipe: dict, primary_bucket: str) -> bool:
     fallback_tags = {
         "drink": {"饮品"},
         "dessert": {"甜品", "甜点心", "下午茶", "茶点"},
-        "main": {"正餐", "轻正餐", "汤面", "汤锅", "热食", "早午餐"},
-        "staple": {"正餐", "主食", "饭类", "面类", "粉类", "饼类"},
-        "dish": {"正餐", "下饭", "家常", "热食"},
+        "main": {"正餐", "正餐主食", "正餐菜品", "轻正餐", "汤面", "汤锅", "热食", "早午餐"},
+        "staple": {"正餐", "正餐主食", "主食", "饭类", "面类", "粉类", "饼类"},
+        "dish": {"正餐", "正餐菜品", "下饭", "家常", "热食"},
         "soup_hotpot": {"汤面", "汤锅", "汤品", "暖胃"},
         "light_meal": {"轻食", "轻正餐", "早午餐"},
     }.get(primary_bucket, set())
@@ -408,7 +414,7 @@ def infer_course_types(recipe: dict) -> list[str]:
         course_types.append("drink")
     if main_type == "轻食早午餐" or staple_category in {"沙拉碗类", "三明治贝果类", "吐司卷饼类", "早餐碗类", "轻主食类"} or any(keyword in name for keyword in light_keywords):
         course_types.append("light_meal")
-    if main_type == "正餐" or staple_category in {"饭类", "面类", "粉类", "饼类", "锅汤类", "菜肴类"} or any(
+    if main_type in {"正餐主食", "正餐菜品"} or staple_category in {"饭类", "面类", "粉类", "饼类", "锅汤类", "菜肴类"} or any(
         keyword in name for keyword in savory_keywords
     ) or "下饭" in get_recipe_feature_tags(recipe):
         course_types.extend(["main", "savory"])
@@ -424,7 +430,7 @@ def infer_course_types(recipe: dict) -> list[str]:
 
 def _merge_preference_query(query: dict, preferences: dict) -> dict:
     merged = {}
-    merged["current_input_flavors"] = query.get("favorite_flavors", [])
+    merged["current_input_flavors"] = query.get("current_input_flavors", [])
     merged["current_input_cuisine_groups"] = query.get("cuisine_groups", [])
     merged["current_input_scene"] = query.get("scene", "")
     merged["favorite_flavors"] = list(
@@ -599,15 +605,23 @@ def _score_recipe(recipe: dict, request: dict, favorite_counts: dict, skip_count
 
 def _diversified_pick(ranked: list[dict], limit: int) -> list[dict]:
     if len(ranked) <= limit:
-        return ranked
+        picked = ranked[:]
+        random.shuffle(picked)
+        return picked
 
     picked = []
     remaining = ranked[:]
     while remaining and len(picked) < limit:
         top_score = remaining[0]["score"]
-        score_window = [item for item in remaining if item["score"] >= top_score - 10]
-        candidate_pool = score_window[: min(len(score_window), 8)]
-        chosen = random.choice(candidate_pool)
+        score_window = [item for item in remaining if item["score"] >= top_score - 18]
+        candidate_pool = score_window[: min(len(score_window), 12)]
+        if len(candidate_pool) < min(limit * 2, len(remaining)):
+            candidate_pool = remaining[: min(len(remaining), max(limit * 2, 8))]
+        weights = [
+            max(1.0, item["score"] - top_score + 22 + random.uniform(0, 5))
+            for item in candidate_pool
+        ]
+        chosen = random.choices(candidate_pool, weights=weights, k=1)[0]
         picked.append(chosen)
 
         chosen_scene_tags = set(parse_tags(chosen["scene_tags"]))
@@ -706,15 +720,16 @@ def recommend_recipes(
         recipes["profile_flavor_tags"] = recipes.apply(lambda row: get_recipe_profile_tags(row.to_dict()), axis=1)
         flavor_intent_filtered = recipes[
             recipes.apply(
-                lambda row: any(
+                lambda row: all(
                     _matches_flavor_intent(row.to_dict(), flavor)
                     for flavor in current_input_flavors
                 ),
                 axis=1,
             )
         ]
-        if len(flavor_intent_filtered) >= max(limit, 3):
-            recipes = flavor_intent_filtered.copy()
+        recipes = flavor_intent_filtered.copy()
+        if recipes.empty:
+            return []
 
     if required_flavors:
         if "profile_flavor_tags" not in recipes.columns:
@@ -795,7 +810,7 @@ def recommend_recipes(
         reasons.extend(profile_reasons)
         if recipe["id"] in favorite_recipe_ids:
             score += 8
-        score += random.uniform(0, 2.5)
+        score += random.uniform(0, 8)
         recipe["score"] = score
         recipe["reason"] = "；".join(reasons[:3]) if reasons else "整体条件比较均衡，适合作为今天的候选菜。"
         recipe["display_tags"] = build_display_tags(recipe)

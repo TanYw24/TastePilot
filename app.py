@@ -43,8 +43,16 @@ LOGIN_COOKIE_MAX_AGE = 30 * 24 * 60 * 60
 ASSET_DIR = Path(__file__).resolve().parent / "assets" / "inspiration"
 LIQIU_CARD_PATH = ASSET_DIR / "liqiu-card.png"
 LICHUN_CARD_PATH = ASSET_DIR / "lichun-card.png"
+YUSHUI_CARD_PATH = ASSET_DIR / "yushui-card.png"
+CHUNFEN_CARD_PATH = ASSET_DIR / "chunfen-card.png"
 LIXIA_CARD_PATH = ASSET_DIR / "lixia-card.png"
+XIAOMAN_CARD_PATH = ASSET_DIR / "xiaoman-card.png"
+XIAZHI_CARD_PATH = ASSET_DIR / "xiazhi-card.png"
 LIDONG_CARD_PATH = ASSET_DIR / "lidong-card.png"
+CHUSHU_CARD_PATH = ASSET_DIR / "chushu-card.png"
+QIUFEN_CARD_PATH = ASSET_DIR / "qiufen-card.png"
+XIAOXUE_CARD_PATH = ASSET_DIR / "xiaoxue-card.png"
+DONGZHI_CARD_PATH = ASSET_DIR / "dongzhi-card.png"
 LIQIU_SCENIC_BG_URL = "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1800&q=80"
 LICHUN_CARD_BG_URL = "https://images.unsplash.com/photo-1523978591478-c753949ff840?auto=format&fit=crop&w=1400&q=80"
 LIXIA_CARD_BG_URL = "https://images.unsplash.com/photo-1467453678174-768ec283a940?auto=format&fit=crop&w=1400&q=80"
@@ -477,6 +485,13 @@ st.markdown(
             0 20px 40px rgba(130, 82, 49, 0.12),
             inset 0 1px 0 rgba(255, 255, 255, 0.3);
         border: 1px solid rgba(255, 255, 255, 0.32);
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .seasonal-card * {
+        user-select: none;
+        -webkit-user-select: none;
     }
     .seasonal-card-overlay {
         min-height: 340px;
@@ -499,6 +514,7 @@ st.markdown(
         right: 1.2rem;
         color: rgba(255, 250, 244, 0.94) !important;
         font-size: 0.9rem;
+        font-weight: 600;
         line-height: 1.4;
         text-decoration: none !important;
         text-shadow: 0 8px 18px rgba(68, 39, 22, 0.22);
@@ -506,12 +522,11 @@ st.markdown(
         padding-bottom: 0;
         transition: opacity 160ms ease;
         -webkit-text-fill-color: rgba(255, 250, 244, 0.94) !important;
+        transform: none !important;
     }
     .seasonal-card-link:hover {
         opacity: 0.86;
-    }
-    .seasonal-card {
-        cursor: pointer;
+        font-size: 0.9rem !important;
     }
     .st-key-seasonal_card_trigger {
         height: 0 !important;
@@ -526,13 +541,27 @@ st.markdown(
         margin: 0 !important;
     }
     .st-key-seasonal_card_trigger [data-testid="stButton"] > button {
-        height: 0 !important;
+        width: 0 !important;
         min-height: 0 !important;
+        height: 0 !important;
         padding: 0 !important;
         margin: 0 !important;
         border: none !important;
+        background: transparent !important;
+        color: transparent !important;
+        box-shadow: none !important;
         opacity: 0 !important;
         pointer-events: none !important;
+    }
+    .st-key-seasonal_card_trigger [data-testid="stButton"] > button:hover,
+    .st-key-seasonal_card_trigger [data-testid="stButton"] > button:focus,
+    .st-key-seasonal_card_trigger [data-testid="stButton"] > button:active {
+        background: transparent !important;
+        color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        transform: none !important;
+        opacity: 0 !important;
     }
     .seasonal-card-kicker {
         display: inline-flex;
@@ -705,6 +734,42 @@ st.markdown(
     .seasonal-page-actions {
         margin: 0.15rem 0 1.15rem;
     }
+    .st-key-seasonal_main_type_filter_shell {
+        padding: 0.95rem 1.05rem 0.85rem;
+        margin: 0.15rem 0 1rem;
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(255, 251, 246, 0.82), rgba(255, 246, 238, 0.7));
+        border: 1px solid rgba(255, 255, 255, 0.32);
+        box-shadow: 0 10px 24px rgba(149, 97, 63, 0.05);
+    }
+    .st-key-seasonal_main_type_filter_shell [data-testid="stSelectbox"] label {
+        color: #7d3127 !important;
+        font-weight: 700 !important;
+    }
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] > div {
+        min-height: 2.9rem;
+        border-radius: 15px !important;
+        background: rgba(255, 253, 249, 0.92) !important;
+        border-color: rgba(221, 186, 157, 0.62) !important;
+    }
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] *,
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] input {
+        color: #7b4d37 !important;
+        -webkit-text-fill-color: #7b4d37 !important;
+    }
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"],
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] input {
+        cursor: pointer !important;
+    }
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] input {
+        caret-color: transparent !important;
+        user-select: none !important;
+    }
+    .st-key-seasonal_main_type_filter_shell [data-testid="stCaptionContainer"],
+    .st-key-seasonal_main_type_filter_shell [data-testid="stCaptionContainer"] * {
+        color: rgba(123, 77, 55, 0.78) !important;
+        -webkit-text-fill-color: rgba(123, 77, 55, 0.78) !important;
+    }
     .st-key-seasonal_action_shell [data-testid="stHorizontalBlock"] {
         gap: 0.75rem;
     }
@@ -811,27 +876,28 @@ st.markdown(
         margin: 0 0.32rem 0.32rem 0;
     }
     .main-type-card {
-        padding: 1rem 1.12rem 0.78rem;
-        border-radius: 24px;
-        background: linear-gradient(180deg, rgba(255, 251, 246, 0.78), rgba(255, 245, 236, 0.58));
-        border: 1px solid rgba(219, 176, 141, 0.34);
+        padding: 0.82rem 1.04rem 0.62rem;
+        border-radius: 20px 20px 8px 8px;
+        background: linear-gradient(180deg, rgba(255, 251, 246, 0.76), rgba(255, 246, 238, 0.52));
+        border: 1px solid rgba(219, 176, 141, 0.3);
+        border-bottom: none;
         box-shadow:
-            0 12px 26px rgba(149, 97, 63, 0.055),
+            0 8px 18px rgba(149, 97, 63, 0.04),
             inset 0 1px 0 rgba(255, 255, 255, 0.34);
         color: #6b4530;
-        margin: 0.74rem 0 0.72rem;
+        margin: 0.66rem 0 0;
     }
     .main-type-title {
         color: #8a3728;
-        font-size: 1rem;
+        font-size: 0.98rem;
         font-weight: 700;
-        margin-bottom: 0.2rem;
+        margin-bottom: 0.16rem;
     }
     .main-type-copy {
         color: rgba(107, 69, 48, 0.72);
-        font-size: 0.88rem;
-        line-height: 1.55;
-        margin-bottom: 0.42rem;
+        font-size: 0.84rem;
+        line-height: 1.45;
+        margin-bottom: 0;
     }
     .main-type-warning {
         color: rgba(138, 55, 40, 0.84);
@@ -842,17 +908,20 @@ st.markdown(
     .st-key-selected_main_types div[data-baseweb="select"] > div,
     .st-key-selected_main_types div[data-baseweb="select"] > div > div,
     .st-key-main_type_picker div[data-baseweb="select"] > div,
-    .st-key-main_type_picker div[data-baseweb="select"] > div > div {
-        background: linear-gradient(180deg, rgba(255, 235, 214, 0.98), rgba(246, 203, 174, 0.9)) !important;
+    .st-key-main_type_picker div[data-baseweb="select"] > div > div,
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] > div,
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] > div > div {
+        background: linear-gradient(180deg, rgba(255, 253, 249, 0.98), rgba(255, 248, 241, 0.94)) !important;
         border: 1px solid rgba(203, 133, 89, 0.48) !important;
-        border-radius: 18px !important;
+        border-radius: 0 0 18px 18px !important;
         box-shadow:
-            0 10px 22px rgba(159, 95, 58, 0.105),
+            0 10px 22px rgba(159, 95, 58, 0.055),
             inset 0 1px 0 rgba(255, 255, 255, 0.46) !important;
         color: #5e3b2a !important;
     }
     .st-key-selected_main_types [data-baseweb="tag"],
-    .st-key-main_type_picker [data-baseweb="tag"] {
+    .st-key-main_type_picker [data-baseweb="tag"],
+    .st-key-seasonal_main_type_filter_shell [data-baseweb="tag"] {
         background: linear-gradient(180deg, rgba(248, 234, 223, 0.96) 0%, rgba(231, 203, 182, 0.92) 100%) !important;
         color: #7b4f39 !important;
         border: 1px solid rgba(177, 136, 109, 0.28) !important;
@@ -863,7 +932,8 @@ st.markdown(
         font-weight: 700 !important;
     }
     .st-key-selected_main_types [data-baseweb="tag"] > *,
-    .st-key-main_type_picker [data-baseweb="tag"] > * {
+    .st-key-main_type_picker [data-baseweb="tag"] > *,
+    .st-key-seasonal_main_type_filter_shell [data-baseweb="tag"] > * {
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
@@ -875,40 +945,106 @@ st.markdown(
     .st-key-main_type_picker [data-baseweb="tag"] span,
     .st-key-main_type_picker [data-baseweb="tag"] svg,
     .st-key-main_type_picker [data-baseweb="tag"] path,
-    .st-key-main_type_picker [class*="multiValue"] {
+    .st-key-main_type_picker [class*="multiValue"],
+    .st-key-seasonal_main_type_filter_shell [data-baseweb="tag"] span,
+    .st-key-seasonal_main_type_filter_shell [data-baseweb="tag"] svg,
+    .st-key-seasonal_main_type_filter_shell [data-baseweb="tag"] path,
+    .st-key-seasonal_main_type_filter_shell [class*="multiValue"] {
         color: #7b4f39 !important;
         fill: #7b4f39 !important;
         background: transparent !important;
         -webkit-text-fill-color: #7b4f39 !important;
     }
     .st-key-selected_main_types [data-baseweb="tag"] [role="button"],
-    .st-key-main_type_picker [data-baseweb="tag"] [role="button"] {
+    .st-key-main_type_picker [data-baseweb="tag"] [role="button"],
+    .st-key-seasonal_main_type_filter_shell [data-baseweb="tag"] [role="button"] {
         background: transparent !important;
         color: #7b4f39 !important;
+    }
+    .st-key-selected_main_types div[data-baseweb="select"] [data-baseweb="tag"],
+    .st-key-main_type_picker div[data-baseweb="select"] [data-baseweb="tag"],
+    .st-key-selected_main_types div[data-baseweb="select"] span[data-baseweb="tag"],
+    .st-key-main_type_picker div[data-baseweb="select"] span[data-baseweb="tag"],
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] [data-baseweb="tag"],
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] span[data-baseweb="tag"] {
+        background: linear-gradient(180deg, rgba(248, 234, 223, 0.98), rgba(231, 203, 182, 0.94)) !important;
+        background-color: rgba(238, 214, 197, 0.98) !important;
+        color: #7b4f39 !important;
+        border: 1px solid rgba(177, 136, 109, 0.34) !important;
+        border-radius: 999px !important;
+        box-shadow:
+            0 6px 14px rgba(137, 102, 80, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.46) !important;
+        -webkit-text-fill-color: #7b4f39 !important;
+    }
+    .st-key-selected_main_types div[data-baseweb="select"] [data-baseweb="tag"] *,
+    .st-key-main_type_picker div[data-baseweb="select"] [data-baseweb="tag"] *,
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] [data-baseweb="tag"] * {
+        color: #7b4f39 !important;
+        fill: #7b4f39 !important;
+        background-color: transparent !important;
+        -webkit-text-fill-color: #7b4f39 !important;
     }
     .st-key-selected_main_types div[data-baseweb="select"] svg,
     .st-key-selected_main_types div[data-baseweb="select"] path,
     .st-key-main_type_picker div[data-baseweb="select"] svg,
-    .st-key-main_type_picker div[data-baseweb="select"] path {
+    .st-key-main_type_picker div[data-baseweb="select"] path,
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] svg,
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] path {
         color: #8a4d2b !important;
         fill: #8a4d2b !important;
     }
     .st-key-selected_main_types div[data-baseweb="select"] input::placeholder,
-    .st-key-main_type_picker div[data-baseweb="select"] input::placeholder {
+    .st-key-main_type_picker div[data-baseweb="select"] input::placeholder,
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] input::placeholder {
         color: #8a4d2b !important;
         opacity: 1 !important;
+    }
+    .st-key-selected_main_types div[data-baseweb="select"],
+    .st-key-main_type_picker div[data-baseweb="select"],
+    .st-key-selected_main_types div[data-baseweb="select"] input,
+    .st-key-main_type_picker div[data-baseweb="select"] input,
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"],
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] input {
+        cursor: pointer !important;
+    }
+    .st-key-selected_main_types div[data-baseweb="select"] input,
+    .st-key-main_type_picker div[data-baseweb="select"] input,
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] input {
+        caret-color: transparent !important;
+        user-select: none !important;
+    }
+    .st-key-selected_main_types div[data-baseweb="select"] [role="combobox"],
+    .st-key-main_type_picker div[data-baseweb="select"] [role="combobox"],
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] [role="combobox"] {
+        caret-color: transparent !important;
+    }
+    .st-key-selected_main_types div[data-baseweb="select"] [data-baseweb="tag"] + div input,
+    .st-key-main_type_picker div[data-baseweb="select"] [data-baseweb="tag"] + div input,
+    .st-key-selected_main_types div[data-baseweb="select"] [class*="multiValue"] + div input,
+    .st-key-main_type_picker div[data-baseweb="select"] [class*="multiValue"] + div input,
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] [data-baseweb="tag"] + div input,
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] [class*="multiValue"] + div input {
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        padding: 0 !important;
     }
     .st-key-selected_main_types div[data-baseweb="select"] [class*="placeholder"],
     .st-key-selected_main_types div[data-baseweb="select"] [class*="Placeholder"],
     .st-key-main_type_picker div[data-baseweb="select"] [class*="placeholder"],
-    .st-key-main_type_picker div[data-baseweb="select"] [class*="Placeholder"] {
+    .st-key-main_type_picker div[data-baseweb="select"] [class*="Placeholder"],
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] [class*="placeholder"],
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] [class*="Placeholder"] {
         color: #8a4d2b !important;
         -webkit-text-fill-color: #8a4d2b !important;
     }
     .st-key-selected_main_types div[data-baseweb="select"] .st-dg.st-cq,
     .st-key-main_type_picker div[data-baseweb="select"] .st-dg.st-cq,
     .st-key-selected_main_types div[data-baseweb="select"] .st-dg.st-cq *,
-    .st-key-main_type_picker div[data-baseweb="select"] .st-dg.st-cq * {
+    .st-key-main_type_picker div[data-baseweb="select"] .st-dg.st-cq *,
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] .st-dg.st-cq,
+    .st-key-seasonal_main_type_filter_shell div[data-baseweb="select"] .st-dg.st-cq * {
         color: #8a4d2b !important;
         -webkit-text-fill-color: #8a4d2b !important;
         opacity: 1 !important;
@@ -1101,8 +1237,8 @@ st.markdown(
             font-size: 0.78rem;
         }
         .main-type-card {
-            padding: 0.86rem 0.92rem 0.68rem;
-            margin: 0.58rem 0 0.54rem;
+            padding: 0.72rem 0.86rem 0.54rem;
+            margin: 0.52rem 0 0;
         }
         .main-type-title {
             font-size: 0.94rem;
@@ -1118,10 +1254,12 @@ st.markdown(
         .seasonal-card-overlay {
             padding: 1.15rem 1.15rem 1.18rem;
         }
-        .seasonal-card-link {
+        .seasonal-card-link,
+        .seasonal-card-link:hover,
+        .seasonal-card-link:active {
             top: 0.95rem;
             right: 1rem;
-            font-size: 0.82rem;
+            font-size: 0.82rem !important;
         }
         .seasonal-card-title {
             font-size: 2.35rem;
@@ -1347,6 +1485,7 @@ st.markdown(
             rgba(255, 241, 231, 0.88) 100%
         ) !important;
         color: #6b3e2c !important;
+        caret-color: #9f4f2e !important;
         border-radius: 22px !important;
         border: 1px solid rgba(225, 196, 173, 0.9) !important;
         box-shadow:
@@ -1357,6 +1496,8 @@ st.markdown(
         -webkit-backdrop-filter: blur(14px) saturate(112%) !important;
         outline: none !important;
         padding: 1rem 1.05rem 3.35rem 1.05rem !important;
+        user-select: text !important;
+        -webkit-user-select: text !important;
     }
     .stTextArea [data-baseweb="base-input"] > div,
     .stTextArea [data-baseweb="textarea"] {
@@ -1382,6 +1523,7 @@ st.markdown(
         background: transparent !important;
     }
     .stTextArea textarea:focus {
+        caret-color: #cf6a42 !important;
         border: 1px solid rgba(214, 175, 145, 0.96) !important;
         box-shadow:
             0 12px 28px rgba(176, 128, 95, 0.11),
@@ -1750,72 +1892,94 @@ def build_skill_to_groups() -> dict[str, set[str]]:
 SKILL_TO_GROUPS = build_skill_to_groups()
 
 SKILL_PREFERENCE_HINTS = {
-    "咖啡搭子": {"main_types": {"饮品", "甜品点心"}, "diet_goals": {"夜宵安慰"}},
+    "咖啡搭子": {"main_types": {"饮品", "甜品"}, "diet_goals": {"夜宵安慰"}},
     "轻一点": {"favorite_flavors": {"清淡"}, "diet_goals": {"均衡饮食", "减脂清爽"}, "vegetarian_preferences": {"希望多素食", "严格素食"}},
     "快手": {"time_limits": {"15 分钟内", "30 分钟内"}},
-    "下饭": {"diet_goals": {"下饭解馋"}, "main_types": {"正餐主食", "家常菜肴"}},
+    "下饭": {"diet_goals": {"下饭解馋"}, "main_types": {"正餐主食", "正餐菜品"}},
     "省钱": {"budget_levels": {"低预算"}},
-    "下午茶": {"main_types": {"饮品", "甜品点心", "轻食早午餐"}},
-    "甜一点": {"main_types": {"甜品点心", "饮品"}, "diet_goals": {"夜宵安慰"}},
+    "下午茶": {"main_types": {"饮品", "甜品", "轻食早午餐"}},
+    "甜一点": {"main_types": {"甜品", "饮品"}, "diet_goals": {"夜宵安慰"}},
     "治愈一点": {"diet_goals": {"夜宵安慰"}, "favorite_flavors": {"家常"}},
-    "聚餐": {"diet_goals": {"朋友聚餐"}, "main_types": {"家常菜肴", "正餐主食"}},
+    "聚餐": {"diet_goals": {"朋友聚餐"}, "main_types": {"正餐主食", "正餐菜品"}},
     "夜宵": {"diet_goals": {"夜宵安慰"}},
     "高蛋白": {"diet_goals": {"高蛋白增肌"}, "favorite_flavors": {"鲜香"}},
-    "奶香": {"main_types": {"甜品点心", "饮品"}, "favorite_flavors": {"酸甜"}},
+    "奶香": {"main_types": {"甜品", "饮品"}, "favorite_flavors": {"酸甜"}},
     "一个人": {"budget_levels": {"低预算"}, "time_limits": {"15 分钟内", "30 分钟内"}},
-    "暖胃": {"diet_goals": {"夜宵安慰"}, "main_types": {"汤锅粥羹"}},
+    "暖胃": {"diet_goals": {"夜宵安慰"}, "main_types": {"正餐主食", "正餐菜品"}},
     "低糖": {"diet_goals": {"减脂清爽"}},
     "香辣": {"favorite_flavors": {"香辣", "重口"}, "diet_goals": {"下饭解馋"}},
     "解馋": {"diet_goals": {"下饭解馋"}, "favorite_flavors": {"重口", "鲜香"}},
-    "汤面": {"main_types": {"汤锅粥羹"}},
-    "果香": {"main_types": {"饮品", "甜品点心"}, "favorite_flavors": {"酸口", "酸甜"}},
-    "茶点": {"main_types": {"甜品点心", "饮品"}},
+    "汤面": {"main_types": {"正餐菜品"}},
+    "果香": {"main_types": {"饮品", "甜品"}, "favorite_flavors": {"酸口", "酸甜"}},
+    "茶点": {"main_types": {"甜品", "饮品"}},
     "清淡": {"favorite_flavors": {"清淡"}, "diet_goals": {"均衡饮食", "减脂清爽"}, "vegetarian_preferences": {"希望多素食", "严格素食"}},
-    "汤锅": {"main_types": {"汤锅粥羹"}},
+    "汤锅": {"main_types": {"正餐菜品"}},
     "家常": {"favorite_flavors": {"家常", "酱香"}, "diet_goals": {"均衡饮食"}},
     "不油腻": {"diet_goals": {"减脂清爽"}, "vegetarian_preferences": {"希望多素食", "严格素食"}},
     "一人食": {"budget_levels": {"低预算"}, "time_limits": {"15 分钟内", "30 分钟内"}},
     "安慰系": {"diet_goals": {"夜宵安慰"}, "favorite_flavors": {"家常", "酸甜"}},
     "解压系": {"diet_goals": {"下饭解馋"}, "favorite_flavors": {"香辣", "重口"}},
-    "暖胃系": {"diet_goals": {"夜宵安慰"}, "main_types": {"汤锅粥羹"}},
+    "暖胃系": {"diet_goals": {"夜宵安慰"}, "main_types": {"正餐主食", "正餐菜品"}},
     "提神系": {"main_types": {"饮品"}, "time_limits": {"15 分钟内", "30 分钟内"}},
-    "犒赏系": {"diet_goals": {"朋友聚餐"}, "main_types": {"甜品点心", "饮品", "家常菜肴"}},
+    "犒赏系": {"diet_goals": {"朋友聚餐"}, "main_types": {"甜品", "饮品", "正餐主食", "正餐菜品"}},
 }
 
 
-MAIN_TYPE_OPTIONS = ["正餐主食", "家常菜肴", "汤锅粥羹", "轻食早午餐", "甜品点心", "饮品"]
+MAIN_TYPE_ALL_OPTION = "全部"
+MAIN_TYPE_OPTIONS = ["正餐主食", "正餐菜品", "轻食早午餐", "甜品", "饮品"]
+MAIN_TYPE_PICKER_OPTIONS = [MAIN_TYPE_ALL_OPTION, *MAIN_TYPE_OPTIONS]
+MAIN_TYPE_ALIASES = {
+    "正餐": ["正餐主食", "正餐菜品"],
+    "正餐主食": ["正餐主食"],
+    "正餐菜品": ["正餐菜品"],
+    "家常菜肴": ["正餐菜品"],
+    "汤锅粥羹": ["正餐菜品"],
+    "甜品点心": ["甜品"],
+}
 MAIN_TYPE_HELP = {
-    "正餐主食": "饭、面、粉、饼、三明治等更顶饱的一餐",
-    "家常菜肴": "炒菜、热菜、冷盘、下饭菜等菜肴本身",
-    "汤锅粥羹": "汤、粥、锅物、汤面等热乎带汤的方向",
+    "正餐主食": "饭、面、粉、饼这类更偏吃饱的主食",
+    "正餐菜品": "热菜、汤锅、粥羹这类更偏配菜或菜品",
     "轻食早午餐": "沙拉、能量碗、早午餐、轻正餐",
-    "甜品点心": "甜品、烘焙、茶点、小点心",
+    "甜品": "甜品、烘焙、茶点、小点心",
     "饮品": "咖啡、奶茶、果茶、茶饮和特调",
 }
 MAIN_TYPE_COURSE_TYPES = {
     "正餐主食": {"main", "savory"},
-    "家常菜肴": {"main", "savory"},
-    "汤锅粥羹": {"main", "savory"},
+    "正餐菜品": {"main", "savory"},
     "轻食早午餐": {"light_meal"},
-    "甜品点心": {"dessert", "snack", "sweet"},
+    "甜品": {"dessert", "snack", "sweet"},
     "饮品": {"drink"},
 }
 MAIN_TYPE_PRIMARY_BUCKET = {
-    "正餐主食": "staple",
-    "家常菜肴": "dish",
-    "汤锅粥羹": "soup_hotpot",
+    "正餐主食": "main",
+    "正餐菜品": "main",
     "轻食早午餐": "light_meal",
-    "甜品点心": "dessert",
+    "甜品": "dessert",
     "饮品": "drink",
 }
 MAIN_TYPE_STAPLE_COMPATIBILITY = {
-    "正餐主食": {"饭类", "面类", "粉类", "饼类", "面包三明治"},
-    "家常菜肴": {"菜肴"},
-    "汤锅粥羹": {"汤粥", "锅物", "面类"},
+    "正餐主食": {"饭类", "面类", "粉类", "饼类"},
+    "正餐菜品": {"菜肴", "菜肴类", "汤粥", "锅物", "锅汤类"},
     "轻食早午餐": {"轻食", "面包三明治", "饭类"},
-    "甜品点心": {"甜品"},
+    "甜品": {"甜品"},
     "饮品": {"饮品"},
 }
+
+
+def normalize_ui_main_types(values: list[str]) -> list[str]:
+    normalized = []
+    for value in values:
+        for main_type in MAIN_TYPE_ALIASES.get(value, [value]):
+            if main_type in MAIN_TYPE_OPTIONS:
+                normalized.append(main_type)
+    return list(dict.fromkeys(normalized))
+
+
+def normalize_main_type_picker_values(values: list[str]) -> list[str]:
+    normalized = normalize_ui_main_types(values)
+    if not normalized:
+        return [MAIN_TYPE_ALL_OPTION]
+    return normalized
 
 SEASONAL_PAGE_CONFIG = {
     "立春": {
@@ -1833,8 +1997,44 @@ SEASONAL_PAGE_CONFIG = {
             "适合口感": ["鲜嫩", "清爽"],
         },
         "card_tags": ["香椿", "春笋", "春饼", "春蔬小炒"],
-        "main_types": ["正餐主食", "家常菜肴", "轻食早午餐", "甜品点心", "饮品"],
+        "main_types": ["正餐", "轻食早午餐", "甜品", "饮品"],
         "scene_note": "更适合春天刚开场时那种想吃得轻一点、鲜一点的胃口。",
+    },
+    "雨水": {
+        "start_md": (2, 19),
+        "title": "雨水时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": YUSHUI_CARD_PATH,
+        "page_background_url": LICHUN_SCENIC_BG_URL,
+        "card_subtitle": "雨水更适合从鲜嫩、清润、带一点暖意的味道开始想。荠菜、春笋和豆腐羹，把早春的湿润与新鲜慢慢端上桌。",
+        "intro": "雨水之后，空气开始湿润，春菜也渐渐有了鲜味。我们从荠菜、春笋、豆腐和早春嫩蔬里，挑一批清润又不失温度的菜给你看。",
+        "seasonal_tags": ["雨水", "春季时令", "早春清润"],
+        "display_tags": ["清润", "鲜嫩", "荠菜", "春笋", "豆腐羹"],
+        "display_tag_groups": {
+            "时令食材": ["荠菜", "春笋", "嫩豆腐"],
+            "适合口感": ["清润", "鲜嫩"],
+        },
+        "card_tags": ["荠菜", "春笋", "嫩豆腐", "清润鲜羹"],
+        "main_types": ["正餐", "轻食早午餐"],
+        "scene_note": "更适合早春水汽渐起时，那种想吃得清润、鲜嫩又带一点暖意的胃口。",
+    },
+    "春分": {
+        "start_md": (3, 20),
+        "title": "春分时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": CHUNFEN_CARD_PATH,
+        "page_background_url": LICHUN_SCENIC_BG_URL,
+        "card_subtitle": "春分更适合吃得鲜嫩、舒展、不过分偏重。香椿、春笋、豆苗和一盘春日煎蛋，正好接住昼夜均分的轻盈感。",
+        "intro": "春分之后，鲜嫩春菜正慢慢铺开。我们从香椿、春笋和豆苗这些当令味道里，挑一批清鲜、平衡又有春意的菜给你看。",
+        "seasonal_tags": ["春分", "春季时令", "仲春尝鲜"],
+        "display_tags": ["平衡", "鲜嫩", "香椿", "春笋", "豆苗"],
+        "display_tag_groups": {
+            "时令食材": ["香椿", "春笋", "豆苗"],
+            "适合口感": ["鲜嫩", "清鲜"],
+        },
+        "card_tags": ["香椿", "春笋", "豆苗", "春日煎蛋"],
+        "main_types": ["正餐", "轻食早午餐"],
+        "scene_note": "更适合昼夜渐暖、春菜正鲜时，那种想吃得平衡又轻快的胃口。",
     },
     "立夏": {
         "start_md": (5, 5),
@@ -1851,8 +2051,44 @@ SEASONAL_PAGE_CONFIG = {
             "适合口感": ["清爽", "脆嫩"],
         },
         "card_tags": ["番茄", "黄瓜", "嫩豌豆", "清爽时蔬"],
-        "main_types": ["正餐主食", "家常菜肴", "轻食早午餐", "饮品"],
+        "main_types": ["正餐", "轻食早午餐", "饮品"],
         "scene_note": "更适合天气开始热起来时那种想吃得轻一点、凉快一点的节奏。",
+    },
+    "小满": {
+        "start_md": (5, 21),
+        "title": "小满时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": XIAOMAN_CARD_PATH,
+        "page_background_url": LIXIA_SCENIC_BG_URL,
+        "card_subtitle": "小满更适合吃一点微苦、脆嫩、不过分厚重的味道。苦瓜、豆干、青梅和嫩豆，刚好是初夏未满的清爽。",
+        "intro": "小满之后，天气渐热但还没有走到盛夏。我们从苦瓜、青梅、嫩豆和清爽豆制品里，挑一批微苦回甘、轻快利落的菜。",
+        "seasonal_tags": ["小满", "夏季时令", "初夏清苦"],
+        "display_tags": ["微苦", "脆嫩", "苦瓜", "青梅", "嫩豆"],
+        "display_tag_groups": {
+            "时令食材": ["苦瓜", "青梅", "嫩豆"],
+            "适合口感": ["微苦", "脆嫩"],
+        },
+        "card_tags": ["苦瓜", "豆干", "青梅", "清爽嫩豆"],
+        "main_types": ["正餐", "轻食早午餐", "饮品"],
+        "scene_note": "更适合初夏渐热但尚未酷暑时，那种想吃得清爽、微苦又有回甘的胃口。",
+    },
+    "夏至": {
+        "start_md": (6, 21),
+        "title": "夏至时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": XIAZHI_CARD_PATH,
+        "page_background_url": LIXIA_SCENIC_BG_URL,
+        "card_subtitle": "夏至更适合从凉面、黄瓜、绿豆和冬瓜这些清爽味道开始想。白昼最长，也让这一餐吃得轻快一点。",
+        "intro": "夏至之后，暑气渐盛，胃口更需要清爽和利落。我们先从凉面、绿豆、黄瓜和冬瓜这些应季方向里，挑一批适合长夏白昼的菜。",
+        "seasonal_tags": ["夏至", "夏季时令", "消暑吃面"],
+        "display_tags": ["清凉", "爽口", "凉面", "绿豆", "冬瓜"],
+        "display_tag_groups": {
+            "时令食材": ["黄瓜", "绿豆", "冬瓜"],
+            "适合口感": ["清凉", "爽口"],
+        },
+        "card_tags": ["麻酱凉面", "黄瓜", "绿豆", "冬瓜"],
+        "main_types": ["正餐", "饮品"],
+        "scene_note": "更适合白昼最长、暑气渐盛时，那种想吃得清凉又有饱足感的节奏。",
     },
     "立秋": {
         "start_md": (8, 7),
@@ -1869,8 +2105,44 @@ SEASONAL_PAGE_CONFIG = {
             "适合口感": ["清润", "热汤"],
         },
         "card_tags": ["梨", "莲藕", "玉米", "清润热汤"],
-        "main_types": ["正餐主食", "家常菜肴", "汤锅粥羹", "甜品点心", "饮品"],
+        "main_types": ["正餐", "甜品", "饮品"],
         "scene_note": "更适合现在这段从盛夏转向初秋的胃口和节奏。",
+    },
+    "处暑": {
+        "start_md": (8, 23),
+        "title": "处暑时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": CHUSHU_CARD_PATH,
+        "page_background_url": LIQIU_SCENIC_BG_URL,
+        "card_subtitle": "处暑更适合从清补、润燥、带一点秋意的味道开始想。荷香鸭饭、莲藕和秋梨，把暑气慢慢送走。",
+        "intro": "处暑之后，热意开始退场，饮食也适合从消暑转向清补。我们从鸭肉、荷叶、莲藕和秋梨里，挑一批温和润燥的过渡时节味道。",
+        "seasonal_tags": ["处暑", "秋季时令", "出暑清补"],
+        "display_tags": ["清补", "润燥", "鸭肉", "莲藕", "秋梨"],
+        "display_tag_groups": {
+            "时令食材": ["鸭肉", "莲藕", "秋梨"],
+            "适合口感": ["清补", "润燥"],
+        },
+        "card_tags": ["荷香鸭饭", "莲藕", "秋梨", "清补鲜汤"],
+        "main_types": ["正餐", "甜品", "饮品"],
+        "scene_note": "更适合暑气渐退、早晚转凉时，那种想吃得温和、清补又不油腻的胃口。",
+    },
+    "秋分": {
+        "start_md": (9, 22),
+        "title": "秋分时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": QIUFEN_CARD_PATH,
+        "page_background_url": LIQIU_SCENIC_BG_URL,
+        "card_subtitle": "秋分更适合从清润、温和、带一点丰收感的味道开始想。梨、莲藕、板栗和桂花，都是刚刚好的秋意。",
+        "intro": "秋分之后，昼夜重新均分，味觉也适合回到温润和平衡。我们先把梨、莲藕、板栗和桂花这些秋日线索，变成一批应景的菜。",
+        "seasonal_tags": ["秋分", "秋季时令", "润燥尝秋"],
+        "display_tags": ["温润", "清甜", "梨", "莲藕", "板栗"],
+        "display_tag_groups": {
+            "时令食材": ["梨", "莲藕", "板栗"],
+            "适合口感": ["温润", "清甜"],
+        },
+        "card_tags": ["秋梨", "莲藕", "板栗", "桂花甜汤"],
+        "main_types": ["正餐", "甜品", "饮品"],
+        "scene_note": "更适合凉意渐稳、秋味正盛时，那种想吃得温润又不厚重的胃口。",
     },
     "立冬": {
         "start_md": (11, 7),
@@ -1887,8 +2159,44 @@ SEASONAL_PAGE_CONFIG = {
             "适合口感": ["暖胃", "热炖"],
         },
         "card_tags": ["白萝卜", "大白菜", "板栗", "暖身炖锅"],
-        "main_types": ["正餐主食", "家常菜肴", "汤锅粥羹", "甜品点心"],
+        "main_types": ["正餐", "甜品"],
         "scene_note": "更适合天气开始冷下来之后，那种想吃热乎、厚实一点的胃口。",
+    },
+    "小雪": {
+        "start_md": (11, 22),
+        "title": "小雪时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": XIAOXUE_CARD_PATH,
+        "page_background_url": LIDONG_SCENIC_BG_URL,
+        "card_subtitle": "小雪更适合从软糯、热乎、带一点甜暖的味道开始想。红糖糍粑、白菜、白萝卜和板栗，让初冬慢慢暖起来。",
+        "intro": "小雪之后，寒意更清楚了，但还没到最深的冬天。我们从糯米、红糖、白菜、萝卜和板栗里，挑一批软糯暖胃的初冬味道。",
+        "seasonal_tags": ["小雪", "冬季时令", "初冬暖食"],
+        "display_tags": ["软糯", "甜暖", "红糖糍粑", "白菜", "白萝卜"],
+        "display_tag_groups": {
+            "时令食材": ["糯米", "白菜", "白萝卜"],
+            "适合口感": ["软糯", "热乎"],
+        },
+        "card_tags": ["红糖糍粑", "白菜", "白萝卜", "板栗暖汤"],
+        "main_types": ["正餐", "甜品"],
+        "scene_note": "更适合初冬寒意渐起时，那种想吃软糯、热乎、能慢慢暖起来的胃口。",
+    },
+    "冬至": {
+        "start_md": (12, 21),
+        "title": "冬至时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": DONGZHI_CARD_PATH,
+        "page_background_url": LIDONG_SCENIC_BG_URL,
+        "card_subtitle": "冬至更适合围着一桌热气慢慢吃。饺子、汤圆和一碗暖汤，把一年里最长的夜晚接得更踏实。",
+        "intro": "冬至到了，适合把一餐吃得热乎、有团聚感。我们从饺子、汤圆和暖汤这些熟悉的冬至味道里，挑一批适合围桌分享的选择。",
+        "seasonal_tags": ["冬至", "冬季时令", "团圆暖食"],
+        "display_tags": ["团圆", "暖胃", "饺子", "汤圆", "热汤"],
+        "display_tag_groups": {
+            "时令食物": ["饺子", "汤圆", "热汤"],
+            "适合口感": ["暖胃", "热乎"],
+        },
+        "card_tags": ["三鲜饺子", "黑芝麻汤圆", "热汤", "围桌暖食"],
+        "main_types": ["正餐", "甜品"],
+        "scene_note": "更适合一年里夜晚最长的时候，和家人朋友围桌吃一顿热乎的。",
     },
 }
 
@@ -1965,6 +2273,8 @@ if "recommendations" not in st.session_state:
     st.session_state.recommendations = []
 if "last_query" not in st.session_state:
     st.session_state.last_query = {}
+if "last_query_signature" not in st.session_state:
+    st.session_state.last_query_signature = None
 if "excluded_recipe_ids" not in st.session_state:
     st.session_state.excluded_recipe_ids = []
 if "auth_mode" not in st.session_state:
@@ -1997,6 +2307,15 @@ if "seasonal_recommendations" not in st.session_state:
     st.session_state.seasonal_recommendations = []
 if "seasonal_excluded_recipe_ids" not in st.session_state:
     st.session_state.seasonal_excluded_recipe_ids = []
+if "seasonal_main_type_filter" not in st.session_state:
+    st.session_state.seasonal_main_type_filter = "全部"
+if "seasonal_main_types" not in st.session_state:
+    legacy_seasonal_main_type = st.session_state.get("seasonal_main_type_filter", MAIN_TYPE_ALL_OPTION)
+    st.session_state.seasonal_main_types = (
+        [legacy_seasonal_main_type]
+        if legacy_seasonal_main_type in MAIN_TYPE_OPTIONS
+        else [MAIN_TYPE_ALL_OPTION]
+    )
 
 
 def set_auth_mode(mode: str) -> None:
@@ -2017,8 +2336,15 @@ def sync_auth_mode_from_query() -> None:
 
 def sync_page_from_query() -> None:
     page = st.query_params.get("page")
-    if page in {"recommend", "profile", "seasonal"}:
+    if page in {"recommend", "profile", "seasonal", "seasonal_preview"}:
         st.session_state.current_page = page
+    if page == "seasonal_preview":
+        preview_term = st.query_params.get("term")
+        if preview_term in SEASONAL_PAGE_CONFIG:
+            if st.session_state.seasonal_term != preview_term:
+                st.session_state.seasonal_recommendations = []
+                st.session_state.seasonal_excluded_recipe_ids = []
+            st.session_state.seasonal_term = preview_term
 
 
 def set_page_query(page: str) -> None:
@@ -2052,6 +2378,51 @@ def sync_login_cookie() -> None:
             height=0,
         )
         st.session_state.clear_login_cookie = False
+
+
+def render_page_scroll_bridge() -> None:
+    page_key = st.session_state.get("current_page", "recommend")
+    components.html(
+        f"""
+        <script>
+        const parentWindow = window.parent;
+        const parentDoc = parentWindow.document;
+        const pageKey = {page_key!r};
+
+        function scrollTastePilotToTop() {{
+          const scrollTargets = [
+            parentWindow,
+            parentDoc.documentElement,
+            parentDoc.body,
+            parentDoc.querySelector('[data-testid="stAppViewContainer"]'),
+            parentDoc.querySelector('section[data-testid="stMain"]'),
+            parentDoc.querySelector('.stMain'),
+            parentDoc.querySelector('.main'),
+          ].filter(Boolean);
+
+          scrollTargets.forEach((target) => {{
+            try {{
+              if (target === parentWindow) {{
+                target.scrollTo({{ top: 0, left: 0, behavior: "auto" }});
+              }} else {{
+                target.scrollTop = 0;
+                target.scrollLeft = 0;
+              }}
+            }} catch (error) {{}}
+          }});
+        }}
+
+        if (parentDoc.body.dataset.tastepilotPageKey !== pageKey) {{
+          parentDoc.body.dataset.tastepilotPageKey = pageKey;
+          scrollTastePilotToTop();
+          parentWindow.requestAnimationFrame(scrollTastePilotToTop);
+          parentWindow.setTimeout(scrollTastePilotToTop, 80);
+          parentWindow.setTimeout(scrollTastePilotToTop, 220);
+        }}
+        </script>
+        """,
+        height=0,
+    )
 
 
 def render_sidebar_toggle_bridge() -> None:
@@ -2253,6 +2624,7 @@ def logout() -> None:
     st.session_state.main_type_notice = ""
     st.session_state.recommendations = []
     st.session_state.last_query = {}
+    st.session_state.last_query_signature = None
     st.session_state.excluded_recipe_ids = []
     st.session_state.preference_notice = ""
     st.session_state.profile_notice = ""
@@ -2260,6 +2632,8 @@ def logout() -> None:
     st.session_state.seasonal_term = get_current_seasonal_term_name()
     st.session_state.seasonal_recommendations = []
     st.session_state.seasonal_excluded_recipe_ids = []
+    st.session_state.seasonal_main_type_filter = "全部"
+    st.session_state.seasonal_main_types = [MAIN_TYPE_ALL_OPTION]
 
 
 def apply_skill(skill_name: str) -> None:
@@ -2300,6 +2674,7 @@ def clear_prompt() -> None:
     st.session_state.main_type_notice = ""
     st.session_state.recommendations = []
     st.session_state.last_query = {}
+    st.session_state.last_query_signature = None
     st.session_state.excluded_recipe_ids = []
     st.session_state.sync_prompt_input = False
 
@@ -2324,10 +2699,27 @@ def open_seasonal_page() -> None:
     set_page_query("seasonal")
 
 
+def select_seasonal_preview_term(term_name: str) -> None:
+    if term_name not in SEASONAL_PAGE_CONFIG:
+        return
+    if st.session_state.seasonal_term != term_name:
+        st.session_state.seasonal_recommendations = []
+        st.session_state.seasonal_excluded_recipe_ids = []
+    st.session_state.seasonal_term = term_name
+    st.query_params["page"] = "seasonal_preview"
+    st.query_params["term"] = term_name
+
+
+def on_seasonal_main_type_change() -> None:
+    st.session_state.seasonal_recommendations = []
+    st.session_state.seasonal_excluded_recipe_ids = []
+
+
 def on_main_type_change() -> None:
     st.session_state.main_type_notice = ""
     st.session_state.recommendations = []
     st.session_state.last_query = {}
+    st.session_state.last_query_signature = None
     st.session_state.excluded_recipe_ids = []
 
 
@@ -2660,16 +3052,51 @@ def render_main_type_arrow_bridge() -> None:
         """
         <script>
         const parentDoc = window.parent.document;
+        const ARROW_BINDING_VERSION = "5";
+        const selectorRoots = [
+          { selector: '.st-key-selected_main_types div[data-baseweb="select"]', readOnly: true },
+          { selector: '.st-key-seasonal_main_type_filter_shell div[data-baseweb="select"]', readOnly: true },
+        ];
 
         function bindMainTypeArrowBehavior() {
-          const root = parentDoc.querySelector('.st-key-selected_main_types div[data-baseweb="select"]');
-          if (!root || root.dataset.tastepilotArrowBound === "1") {
+          selectorRoots.forEach((config) => {
+            const root = parentDoc.querySelector(config.selector);
+            if (root) {
+              bindSelectArrow(root, config.readOnly);
+            }
+          });
+        }
+
+        function bindSelectArrow(root, readOnly) {
+          if (root.dataset.tastepilotArrowBound === ARROW_BINDING_VERSION) {
             return;
           }
-          root.dataset.tastepilotArrowBound = "1";
+          root.dataset.tastepilotArrowBound = ARROW_BINDING_VERSION;
+          root.dataset.tastepilotMenuOpen = "0";
 
           const getCombobox = () => root.querySelector('input[role="combobox"]');
-          const getArrow = () => root.querySelector('svg[title="open"]');
+          const getExpanded = () => {
+            return root.dataset.tastepilotMenuOpen === "1";
+          };
+          const getArrow = () => {
+            const titledArrow = root.querySelector('svg[title="open"], svg[title="close"]');
+            if (titledArrow) {
+              return titledArrow;
+            }
+            const icons = Array.from(root.querySelectorAll("svg"));
+            return icons[icons.length - 1] || null;
+          };
+          const isArrowClick = (event, arrow) => {
+            const arrowShell = arrow?.parentElement;
+            if (arrow && (arrow === event.target || arrow.contains(event.target))) {
+              return true;
+            }
+            if (arrowShell && (arrowShell === event.target || arrowShell.contains(event.target))) {
+              return true;
+            }
+            const rect = root.getBoundingClientRect();
+            return event.clientX >= rect.right - 54 && event.clientX <= rect.right + 6;
+          };
 
           const syncArrow = () => {
             const combobox = getCombobox();
@@ -2677,10 +3104,82 @@ def render_main_type_arrow_bridge() -> None:
             if (!combobox || !arrow) {
               return;
             }
-            const expanded = combobox.getAttribute("aria-expanded") === "true";
+            const nativeExpanded = (
+              combobox.getAttribute("aria-expanded") === "true"
+              || root.getAttribute("aria-expanded") === "true"
+            );
+            if (nativeExpanded && root.dataset.tastepilotForcedClosed !== "1") {
+              root.dataset.tastepilotMenuOpen = "1";
+            }
+            const expanded = getExpanded();
             arrow.style.transition = "transform 160ms ease";
             arrow.style.transform = expanded ? "rotate(180deg)" : "rotate(0deg)";
+            if (readOnly) {
+              applyReadOnlySelect(root, combobox);
+            }
           };
+
+          const applyReadOnlySelect = (root, combobox) => {
+            combobox.readOnly = true;
+            combobox.setAttribute("readonly", "readonly");
+            combobox.setAttribute("placeholder", "");
+            combobox.style.cursor = "pointer";
+            combobox.style.caretColor = "transparent";
+            combobox.value = "";
+
+            const hasSelectedTags = root.querySelectorAll('[data-baseweb="tag"], [class*="multiValue"]').length > 0;
+            const inputShell = combobox.parentElement;
+            if (hasSelectedTags && inputShell) {
+              Object.assign(inputShell.style, {
+                width: "0px",
+                minWidth: "0px",
+                maxWidth: "0px",
+                flex: "0 0 0px",
+                padding: "0",
+                margin: "0",
+                overflow: "hidden",
+              });
+              Object.assign(combobox.style, {
+                width: "0px",
+                minWidth: "0px",
+                maxWidth: "0px",
+                padding: "0",
+              });
+            }
+          };
+
+          if (readOnly) {
+            const blockTyping = (event) => {
+              const allowedKeys = new Set([
+                "ArrowUp",
+                "ArrowDown",
+                "Enter",
+                "Escape",
+                "Tab",
+                "Home",
+                "End",
+              ]);
+              if (event.type === "keydown" && allowedKeys.has(event.key)) {
+                return;
+              }
+              event.preventDefault();
+            };
+            root.addEventListener("keydown", blockTyping, true);
+            root.addEventListener("keypress", blockTyping, true);
+            root.addEventListener("beforeinput", blockTyping, true);
+            root.addEventListener("paste", blockTyping, true);
+            root.addEventListener(
+              "input",
+              (event) => {
+                const combobox = getCombobox();
+                if (combobox && event.target === combobox) {
+                  combobox.value = "";
+                  applyReadOnlySelect(root, combobox);
+                }
+              },
+              true
+            );
+          }
 
           root.addEventListener(
             "mousedown",
@@ -2691,61 +3190,115 @@ def render_main_type_arrow_bridge() -> None:
                 return;
               }
 
-              const clickedArrow = arrow === event.target || arrow.contains(event.target);
+              const clickedArrow = isArrowClick(event, arrow);
               if (!clickedArrow) {
                 window.parent.setTimeout(syncArrow, 30);
                 return;
               }
 
-              const expanded = combobox.getAttribute("aria-expanded") === "true";
+              const expanded = getExpanded();
               if (!expanded) {
+                if (root.dataset.tastepilotForcedClosed === "1") {
+                  clearForcedClosed(root);
+                }
+                root.dataset.tastepilotMenuOpen = "1";
                 window.parent.setTimeout(syncArrow, 30);
                 window.parent.setTimeout(syncArrow, 140);
+                window.parent.setTimeout(syncArrow, 260);
                 return;
               }
 
               event.preventDefault();
               event.stopPropagation();
-
-              const bodyEventInit = {
-                bubbles: true,
-                cancelable: true,
-                composed: true,
-                view: window.parent,
-                clientX: 8,
-                clientY: 8,
-                button: 0,
-              };
-              if (typeof combobox.focus === "function") {
-                combobox.focus();
+              if (typeof event.stopImmediatePropagation === "function") {
+                event.stopImmediatePropagation();
               }
-              combobox.dispatchEvent(
-                new KeyboardEvent("keydown", {
-                  key: "Escape",
-                  code: "Escape",
-                  keyCode: 27,
-                  which: 27,
-                  bubbles: true,
-                  cancelable: true,
-                })
-              );
-              combobox.dispatchEvent(
-                new KeyboardEvent("keyup", {
-                  key: "Escape",
-                  code: "Escape",
-                  keyCode: 27,
-                  which: 27,
-                  bubbles: true,
-                  cancelable: true,
-                })
-              );
-              ["mousedown", "mouseup", "click"].forEach((type) => {
-                parentDoc.body.dispatchEvent(new MouseEvent(type, bodyEventInit));
-              });
+              closeSelectMenu(root, combobox, arrow);
+            },
+            true
+          );
 
-              window.parent.setTimeout(syncArrow, 30);
-              window.parent.setTimeout(syncArrow, 140);
-              window.parent.setTimeout(syncArrow, 260);
+          root.addEventListener(
+            "focusin",
+            () => {
+              if (root.dataset.tastepilotForcedClosed !== "1") {
+                window.parent.setTimeout(syncArrow, 30);
+              }
+            },
+            true
+          );
+
+          const closeSelectMenu = (root, combobox, arrow) => {
+            root.dataset.tastepilotForcedClosed = "1";
+            root.dataset.tastepilotMenuOpen = "0";
+            combobox.setAttribute("aria-expanded", "false");
+            root.setAttribute("aria-expanded", "false");
+            const escapeEventInit = {
+              key: "Escape",
+              code: "Escape",
+              keyCode: 27,
+              which: 27,
+              bubbles: true,
+              cancelable: true,
+            };
+            [combobox, parentDoc.activeElement, parentDoc.body].filter(Boolean).forEach((target) => {
+              target.dispatchEvent(new KeyboardEvent("keydown", escapeEventInit));
+              target.dispatchEvent(new KeyboardEvent("keyup", escapeEventInit));
+            });
+            if (typeof combobox.blur === "function") {
+              combobox.blur();
+            }
+            const outsideTarget = parentDoc.elementFromPoint(12, 12) || parentDoc.body;
+            ["pointerdown", "mousedown", "mouseup", "click"].forEach((type) => {
+              outsideTarget.dispatchEvent(
+                new MouseEvent(type, {
+                  bubbles: true,
+                  cancelable: true,
+                  composed: true,
+                  view: window.parent,
+                  clientX: 12,
+                  clientY: 12,
+                  button: 0,
+                })
+              );
+            });
+            parentDoc
+              .querySelectorAll('div[data-baseweb="popover"], [role="listbox"]')
+              .forEach((popover) => {
+                popover.dataset.tastepilotHiddenByArrow = "1";
+                popover.style.display = "none";
+                popover.style.pointerEvents = "none";
+              });
+            if (arrow) {
+              arrow.style.transform = "rotate(0deg)";
+            }
+            window.parent.setTimeout(syncArrow, 30);
+            window.parent.setTimeout(syncArrow, 140);
+          };
+
+          const clearForcedClosed = (root) => {
+            root.dataset.tastepilotForcedClosed = "0";
+            parentDoc
+              .querySelectorAll('[data-tastepilot-hidden-by-arrow="1"]')
+              .forEach((popover) => {
+                popover.style.display = "";
+                popover.style.pointerEvents = "";
+                popover.dataset.tastepilotHiddenByArrow = "0";
+              });
+            window.parent.setTimeout(syncArrow, 30);
+          };
+
+          root.addEventListener(
+            "mousedown",
+            (event) => {
+              if (root.dataset.tastepilotForcedClosed === "1") {
+                const arrow = getArrow();
+                if (isArrowClick(event, arrow)) {
+                  clearForcedClosed(root);
+                  return;
+                }
+                clearForcedClosed(root);
+              }
             },
             true
           );
@@ -2758,7 +3311,7 @@ def render_main_type_arrow_bridge() -> None:
             attributeFilter: ["aria-expanded", "style", "class"],
           });
           syncArrow();
-        }
+        };
 
         bindMainTypeArrowBehavior();
 
@@ -2786,24 +3339,20 @@ def render_seasonal_card_bridge() -> None:
         function bindSeasonalCard() {
           const card = parentDoc.querySelector(".seasonal-card");
           const trigger = parentDoc.querySelector(".st-key-seasonal_card_trigger button");
-          if (!card || !trigger || card.dataset.tastepilotSeasonalBound === "1") {
+          if (!card || !trigger) {
             return;
           }
 
-          card.dataset.tastepilotSeasonalBound = "1";
-          card.addEventListener("click", (event) => {
-            const clickedLink = event.target.closest(".seasonal-card-link");
-            if (clickedLink) {
-              event.preventDefault();
-            }
+          card.dataset.tastepilotSeasonalBound = "2";
+          card.onclick = () => {
             trigger.click();
-          });
+          };
         }
 
         bindSeasonalCard();
 
         const observer = new MutationObserver(bindSeasonalCard);
-        observer.observe(parentDoc.body, { subtree: true, childList: true, attributes: true });
+        observer.observe(parentDoc.body, { subtree: true, childList: true });
         window.addEventListener("beforeunload", () => observer.disconnect(), { once: true });
         </script>
         """,
@@ -3168,11 +3717,13 @@ def build_query_from_prompt(preferences: dict, prompt_override: str | None = Non
     prompt_text = (prompt_override if prompt_override is not None else st.session_state.prompt_text_input).strip()
     st.session_state.prompt_text = prompt_text
     parsed = parse_free_text_request(prompt_text)
-    selected_main_types = st.session_state.get("selected_main_types", [])
-    parsed_main_types = parsed.get("main_types", [])
+    selected_main_type_values = st.session_state.get("selected_main_types", [])
+    selected_main_types = normalize_ui_main_types(selected_main_type_values)
+    use_all_main_types = MAIN_TYPE_ALL_OPTION in selected_main_type_values or not selected_main_types
+    parsed_main_types = normalize_ui_main_types(parsed.get("main_types", []))
     conflicting_main_types = [
         main_type for main_type in parsed_main_types if main_type not in selected_main_types
-    ] if selected_main_types else []
+    ] if selected_main_types and not use_all_main_types else []
     has_main_type_conflict = bool(conflicting_main_types)
     selected_course_types = set()
     compatible_staple_categories = set()
@@ -3180,7 +3731,14 @@ def build_query_from_prompt(preferences: dict, prompt_override: str | None = Non
         selected_course_types.update(MAIN_TYPE_COURSE_TYPES.get(main_type, set()))
         compatible_staple_categories.update(MAIN_TYPE_STAPLE_COMPATIBILITY.get(main_type, set()))
 
-    if selected_main_types:
+    if use_all_main_types:
+        main_types = MAIN_TYPE_OPTIONS
+        preferred_course_types = []
+        avoid_course_types = parsed.get("avoid_course_types", [])
+        staple_categories = parsed.get("staple_categories", [])
+        beverage_categories = parsed.get("beverage_categories", [])
+        primary_bucket = parsed.get("primary_bucket")
+    elif selected_main_types:
         main_types = list(dict.fromkeys(selected_main_types))
         preferred_course_types = list(selected_course_types)
         avoid_course_types = [] if has_main_type_conflict else [
@@ -3203,7 +3761,7 @@ def build_query_from_prompt(preferences: dict, prompt_override: str | None = Non
         ]
         primary_bucket = selected_primary_buckets[0] if len(selected_primary_buckets) == 1 else None
     else:
-        main_types = parsed.get("main_types", [])
+        main_types = parsed_main_types
         preferred_course_types = parsed.get("preferred_course_types", [])
         avoid_course_types = parsed.get("avoid_course_types", [])
         staple_categories = parsed.get("staple_categories", [])
@@ -3229,6 +3787,7 @@ def build_query_from_prompt(preferences: dict, prompt_override: str | None = Non
     query = {
         "scene": "" if has_main_type_conflict else parsed.get("scene", ""),
         "favorite_flavors": preferred_flavors,
+        "current_input_flavors": [] if has_main_type_conflict else parsed.get("favorite_flavors", []),
         "required_flavors": [] if has_main_type_conflict else parsed.get("required_flavors", []),
         "diet_goal": "" if has_main_type_conflict else parsed.get("diet_goal", ""),
         "budget_level": parsed.get("budget_level", preferences.get("budget_level", "中等预算")),
@@ -3255,12 +3814,26 @@ def build_query_from_prompt(preferences: dict, prompt_override: str | None = Non
     return query, parsed
 
 
+def build_current_query_signature(prompt_override: str | None = None) -> tuple[str, tuple[str, ...]]:
+    prompt_text = (
+        prompt_override
+        if prompt_override is not None
+        else st.session_state.get("prompt_text_input", "")
+    ).strip()
+    selected_main_types = tuple(
+        normalize_main_type_picker_values(st.session_state.get("selected_main_types", []))
+    )
+    return prompt_text, selected_main_types
+
+
 def build_display_hints_for_current_input(parsed: dict) -> tuple[list[str], bool]:
-    selected_main_types = st.session_state.get("selected_main_types", [])
-    parsed_main_types = parsed.get("main_types", [])
+    selected_main_type_values = st.session_state.get("selected_main_types", [])
+    selected_main_types = normalize_ui_main_types(selected_main_type_values)
+    use_all_main_types = MAIN_TYPE_ALL_OPTION in selected_main_type_values or not selected_main_types
+    parsed_main_types = normalize_ui_main_types(parsed.get("main_types", []))
     conflicting_main_types = [
         main_type for main_type in parsed_main_types if main_type not in selected_main_types
-    ] if selected_main_types else []
+    ] if selected_main_types and not use_all_main_types else []
     if conflicting_main_types:
         return (
             [
@@ -3273,14 +3846,39 @@ def build_display_hints_for_current_input(parsed: dict) -> tuple[list[str], bool
     return parsed.get("display_hints") or parsed.get("recognized_hints", []), False
 
 
-def run_recommendation(preferences: dict, append_skill: str | None = None, replace_mode: bool = False) -> None:
-    if not st.session_state.get("selected_main_types"):
-        st.session_state.main_type_notice = "先选择至少一个大类，我再帮你把范围收准。"
-        st.session_state.recommendations = []
-        st.session_state.last_query = {}
-        st.session_state.excluded_recipe_ids = []
-        return
+def recipe_matches_required_home_intent(recipe: dict, query: dict) -> bool:
+    selected_main_types = normalize_ui_main_types(query.get("main_types", []))
+    if selected_main_types and recipe.get("main_type") not in selected_main_types:
+        return False
 
+    required_flavors = query.get("current_input_flavors") or query.get("required_flavors") or []
+    if not required_flavors:
+        return True
+
+    recipe_tags = set(recipe.get("display_tags", []))
+    recipe_tags.update(recipe.get("feature_tags", "").split("|"))
+    recipe_tags.update(recipe.get("flavor_profile", "").split("|"))
+    recipe_tags.update(recipe.get("taste_tags", "").split("|"))
+    recipe_tags = {tag for tag in recipe_tags if tag}
+
+    flavor_aliases = {
+        "香辣": {"香辣", "辣", "辣味", "重口", "川菜", "湘菜"},
+        "清淡": {"清淡", "清爽", "轻负担"},
+        "酸甜": {"酸甜", "酸口", "果香"},
+        "鲜香": {"鲜香", "鲜味"},
+        "奶香": {"奶香"},
+    }
+    for flavor in required_flavors:
+        if flavor == "香辣" and int(recipe.get("is_spicy") or 0) == 1:
+            continue
+        accepted_tags = flavor_aliases.get(flavor, {flavor})
+        if recipe_tags.intersection(accepted_tags):
+            continue
+        return False
+    return True
+
+
+def run_recommendation(preferences: dict, append_skill: str | None = None, replace_mode: bool = False) -> None:
     st.session_state.main_type_notice = ""
     prompt_override = None
     if append_skill:
@@ -3300,7 +3898,12 @@ def run_recommendation(preferences: dict, append_skill: str | None = None, repla
         limit=3,
         exclude_recipe_ids=excluded_ids,
     )
+    recommendations = [
+        recipe for recipe in recommendations
+        if recipe_matches_required_home_intent(recipe, query)
+    ]
     st.session_state.last_query = query
+    st.session_state.last_query_signature = build_current_query_signature(prompt_override=prompt_override)
 
     if replace_mode and recommendations:
         st.session_state.excluded_recipe_ids.extend([item["id"] for item in recommendations])
@@ -3435,7 +4038,7 @@ def render_seasonal_inspiration_card() -> None:
         unsafe_allow_html=True,
     )
     with st.container(key="seasonal_card_trigger"):
-        st.button("open seasonal card", key="open_seasonal_card_button", on_click=open_seasonal_page)
+        st.button("打开节气专题", key="open_seasonal_card_button", on_click=open_seasonal_page)
     render_seasonal_card_bridge()
 
 
@@ -3445,6 +4048,17 @@ def run_seasonal_recommendation(preferences: dict, term_name: str, replace_mode:
         st.session_state.seasonal_recommendations = []
         return
 
+    selected_main_types = normalize_main_type_picker_values(st.session_state.get("seasonal_main_types", []))
+    use_all_main_types = MAIN_TYPE_ALL_OPTION in selected_main_types
+    seasonal_available_main_types = config.get("main_types", [])
+    requested_main_types = (
+        seasonal_available_main_types
+        if use_all_main_types
+        else [main_type for main_type in selected_main_types if main_type in seasonal_available_main_types]
+    )
+    if not requested_main_types:
+        st.session_state.seasonal_recommendations = []
+        return
     excluded_ids = st.session_state.seasonal_excluded_recipe_ids if replace_mode else []
     query = {
         "scene": "",
@@ -3460,7 +4074,7 @@ def run_seasonal_recommendation(preferences: dict, term_name: str, replace_mode:
         "intent_tags": [],
         "mood_search_tags": [],
         "beverage_categories": [],
-        "main_types": config.get("main_types", []),
+        "main_types": requested_main_types,
         "staple_categories": [],
         "solar_terms": config.get("seasonal_tags", [term_name]),
         "cuisine_groups": [],
@@ -3477,6 +4091,11 @@ def run_seasonal_recommendation(preferences: dict, term_name: str, replace_mode:
         limit=6,
         exclude_recipe_ids=excluded_ids,
     )
+    if not use_all_main_types:
+        recommendations = [
+            item for item in recommendations
+            if item.get("main_type") in selected_main_types
+        ]
     if replace_mode and recommendations:
         st.session_state.seasonal_excluded_recipe_ids.extend([item["id"] for item in recommendations])
         st.session_state.seasonal_excluded_recipe_ids = list(dict.fromkeys(st.session_state.seasonal_excluded_recipe_ids))
@@ -3522,9 +4141,24 @@ def render_recommendation_cards(
             st.info(f"已记下你这次不太想吃 {recipe['name']}。")
 
 
+def render_empty_recipe_state() -> None:
+    st.markdown(
+        """
+        <div class="followup-title">抱歉，暂无此类菜品</div>
+        <div class="section-note">
+            可以换一个大类，或放宽口味、场景、预算等条件再试试。
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def render_input_area(preferences: dict) -> None:
     time_label, active_skill_groups = get_dynamic_skill_groups(preferences)
     hero_date_label = format_hero_date_label()
+    normalized_main_types = normalize_main_type_picker_values(st.session_state.get("selected_main_types", []))
+    if st.session_state.get("selected_main_types", []) != normalized_main_types:
+        st.session_state.selected_main_types = normalized_main_types
     if st.session_state.sync_prompt_input:
         st.session_state.prompt_text_input = st.session_state.prompt_text
         st.session_state.sync_prompt_input = False
@@ -3568,8 +4202,8 @@ def render_input_area(preferences: dict) -> None:
         <div class="prompt-card">
             <div class="section-heading">告诉我你现在想吃什么</div>
             <div class="section-copy">
-                先选一个或多个大类，再输入一句模糊需求，比如“想吃热乎一点、别太贵、一个人吃”，
-                也可以点下面的 skill，让我们更快接近那道对的菜。
+                可以先选大类，也可以直接输入一句模糊需求，比如“想吃热乎一点、别太贵、一个人吃”。
+                不选大类时会默认从全部推荐池里帮你找。
             </div>
         </div>
         """,
@@ -3578,17 +4212,17 @@ def render_input_area(preferences: dict) -> None:
     st.markdown(
         """
         <div class="main-type-card">
-            <div class="main-type-title">先选你想看的大类</div>
-            <div class="main-type-copy">可以多选。大类负责确定推荐池，口味、菜系、场景会作为标签继续精细排序。</div>
+            <div class="main-type-title">选择大类</div>
+            <div class="main-type-copy">可多选；不选或选择“全部”时，会从四个大类一起推荐。</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
     st.multiselect(
         "选择菜谱大类",
-        options=MAIN_TYPE_OPTIONS,
+        options=MAIN_TYPE_PICKER_OPTIONS,
         key="selected_main_types",
-        placeholder="例如：正餐主食、家常菜肴、饮品",
+        placeholder="全部",
         help="；".join(f"{name}：{MAIN_TYPE_HELP[name]}" for name in MAIN_TYPE_OPTIONS),
         label_visibility="collapsed",
         on_change=on_main_type_change,
@@ -3601,10 +4235,8 @@ def render_input_area(preferences: dict) -> None:
         height=110,
         label_visibility="collapsed",
     )
-    if st.session_state.main_type_notice or (
-        st.session_state.prompt_text_input.strip() and not st.session_state.selected_main_types
-    ):
-        notice = st.session_state.main_type_notice or "先选择至少一个大类，再告诉我具体想吃什么。"
+    if st.session_state.main_type_notice:
+        notice = st.session_state.main_type_notice
         st.markdown(f'<div class="main-type-warning">{notice}</div>', unsafe_allow_html=True)
 
     with st.container(key="prompt_skill_shell"):
@@ -3690,8 +4322,14 @@ def render_input_area(preferences: dict) -> None:
 
 
 def render_recipe_cards() -> None:
+    if st.session_state.get("last_query_signature") != build_current_query_signature():
+        return
+
     recommendations = st.session_state.recommendations
-    render_recommendation_cards(recommendations, "今晚先看这 3 个", "home")
+    if recommendations:
+        render_recommendation_cards(recommendations, "今晚先看这 3 个", "home")
+    elif st.session_state.get("last_query"):
+        render_empty_recipe_state()
 
 
 def render_follow_up_actions(preferences: dict) -> None:
@@ -3716,15 +4354,34 @@ def render_follow_up_actions(preferences: dict) -> None:
                 st.rerun()
 
 
-def render_seasonal_page(preferences: dict) -> None:
+def render_seasonal_page(preferences: dict, preview_mode: bool = False) -> None:
     current_term_name = get_current_seasonal_term_name()
-    st.session_state.seasonal_term = current_term_name
+    if not preview_mode:
+        st.session_state.seasonal_term = current_term_name
     term_name = st.session_state.get("seasonal_term", current_term_name)
     config = SEASONAL_PAGE_CONFIG.get(term_name, SEASONAL_PAGE_CONFIG[current_term_name])
     if term_name not in SEASONAL_PAGE_CONFIG:
         st.session_state.seasonal_term = current_term_name
         term_name = current_term_name
         config = SEASONAL_PAGE_CONFIG[term_name]
+
+    if preview_mode:
+        st.markdown('<div class="seasonal-switch-label">节气测试预览 · Seasonal Preview</div>', unsafe_allow_html=True)
+        preview_terms = list(SEASONAL_PAGE_CONFIG.keys())
+        with st.container(key="seasonal_term_switcher"):
+            for row_start in range(0, len(preview_terms), 6):
+                row_terms = preview_terms[row_start : row_start + 6]
+                switch_cols = st.columns(6, gap="small")
+                for column_index, preview_term in enumerate(row_terms):
+                    with switch_cols[column_index]:
+                        st.button(
+                            preview_term,
+                            key=f"preview_term_{preview_term}",
+                            type="primary" if preview_term == term_name else "secondary",
+                            use_container_width=True,
+                            on_click=select_seasonal_preview_term,
+                            args=(preview_term,),
+                        )
 
     if not st.session_state.seasonal_recommendations:
         run_seasonal_recommendation(preferences, term_name)
@@ -3782,6 +4439,23 @@ def render_seasonal_page(preferences: dict) -> None:
                 open_recommend_page()
                 st.rerun()
 
+    seasonal_filter_options = [MAIN_TYPE_ALL_OPTION, *MAIN_TYPE_OPTIONS]
+    normalized_seasonal_main_types = normalize_main_type_picker_values(st.session_state.get("seasonal_main_types", []))
+    if st.session_state.get("seasonal_main_types", []) != normalized_seasonal_main_types:
+        st.session_state.seasonal_main_types = normalized_seasonal_main_types
+
+    with st.container(key="seasonal_main_type_filter_shell"):
+        st.multiselect(
+            "想看哪一类",
+            seasonal_filter_options,
+            key="seasonal_main_types",
+            placeholder="全部",
+            on_change=on_seasonal_main_type_change,
+            help="按照菜谱数据库中的一级分类筛选当前节气推荐。",
+        )
+        st.caption("可多选；不选或选择“全部”时，会从当前节气的全部分类一起推荐。")
+    render_main_type_arrow_bridge()
+
     st.markdown(
         """
         <div class="seasonal-section-card">
@@ -3796,10 +4470,22 @@ def render_seasonal_page(preferences: dict) -> None:
     )
 
     recommendations = st.session_state.seasonal_recommendations
+    selected_main_types = normalize_main_type_picker_values(st.session_state.get("seasonal_main_types", []))
+    use_all_main_types = MAIN_TYPE_ALL_OPTION in selected_main_types
+    selected_main_type_label = " / ".join(selected_main_types)
+    recommendation_title = (
+        f"先看看这批 {term_name} {selected_main_type_label}"
+        if not use_all_main_types
+        else f"先看看这批 {term_name} 时令菜"
+    )
     if recommendations:
-        render_recommendation_cards(recommendations, f"先看看这批 {term_name} 时令菜", f"seasonal_{term_name}")
+        render_recommendation_cards(
+            recommendations,
+            recommendation_title,
+            f"seasonal_{term_name}_{selected_main_type_label}",
+        )
     else:
-        st.info("这一页暂时还没筛出合适的时令菜，我们可以继续补更丰富的节气内容。")
+        render_empty_recipe_state()
 
 
 def main() -> None:
@@ -3819,10 +4505,13 @@ def main() -> None:
         render_profile_page()
     elif st.session_state.current_page == "seasonal":
         render_seasonal_page(preferences)
+    elif st.session_state.current_page == "seasonal_preview":
+        render_seasonal_page(preferences, preview_mode=True)
     else:
         render_input_area(preferences)
         render_recipe_cards()
         render_follow_up_actions(preferences)
+    render_page_scroll_bridge()
 
 
 main()
