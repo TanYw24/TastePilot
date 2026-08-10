@@ -5,7 +5,6 @@ from datetime import datetime
 from email.message import EmailMessage
 from pathlib import Path
 from random import randint
-from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
 import streamlit as st
@@ -460,6 +459,7 @@ st.markdown(
         margin: 0.2rem 0 1rem;
     }
     .seasonal-card {
+        position: relative;
         min-height: 340px;
         border-radius: 30px;
         overflow: hidden;
@@ -501,6 +501,30 @@ st.markdown(
     }
     .seasonal-card-link:hover {
         opacity: 0.86;
+    }
+    .seasonal-card {
+        cursor: pointer;
+    }
+    .st-key-seasonal_card_trigger {
+        height: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+    .st-key-seasonal_card_trigger [data-testid="stButton"] {
+        height: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+    }
+    .st-key-seasonal_card_trigger [data-testid="stButton"] > button {
+        height: 0 !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
     }
     .seasonal-card-kicker {
         display: inline-flex;
@@ -2735,6 +2759,40 @@ def render_main_type_arrow_bridge() -> None:
     )
 
 
+def render_seasonal_card_bridge() -> None:
+    components.html(
+        """
+        <script>
+        const parentDoc = window.parent.document;
+
+        function bindSeasonalCard() {
+          const card = parentDoc.querySelector(".seasonal-card");
+          const trigger = parentDoc.querySelector(".st-key-seasonal_card_trigger button");
+          if (!card || !trigger || card.dataset.tastepilotSeasonalBound === "1") {
+            return;
+          }
+
+          card.dataset.tastepilotSeasonalBound = "1";
+          card.addEventListener("click", (event) => {
+            const clickedLink = event.target.closest(".seasonal-card-link");
+            if (clickedLink) {
+              event.preventDefault();
+            }
+            trigger.click();
+          });
+        }
+
+        bindSeasonalCard();
+
+        const observer = new MutationObserver(bindSeasonalCard);
+        observer.observe(parentDoc.body, { subtree: true, childList: true, attributes: true });
+        window.addEventListener("beforeunload", () => observer.disconnect(), { once: true });
+        </script>
+        """,
+        height=0,
+    )
+
+
 def render_auth_screen() -> None:
     st.markdown(
         """
@@ -3363,7 +3421,6 @@ def render_seasonal_inspiration_card() -> None:
     term_name = get_current_seasonal_term_name()
     config = SEASONAL_PAGE_CONFIG.get(term_name, SEASONAL_PAGE_CONFIG[get_current_seasonal_term_name()])
     background_image = resolve_image_source(config["image_path"])
-    term_link = "?page=seasonal"
     background_style = (
         f"background-image: linear-gradient(180deg, rgba(255, 248, 239, 0.08), rgba(84, 54, 35, 0.14)), url('{background_image}');"
         if background_image
@@ -3375,7 +3432,7 @@ def render_seasonal_inspiration_card() -> None:
         <div class="seasonal-card-shell">
             <div class="seasonal-card" style="{background_style}">
                 <div class="seasonal-card-overlay">
-                    <a class="seasonal-card-link" href="{term_link}">点击灵感卡，前往当前节气专题页 &gt;&gt;</a>
+                    <div class="seasonal-card-link">点击灵感卡，前往当前节气专题页 &gt;&gt;</div>
                     <div class="seasonal-card-kicker">节气灵感 · Solar Term</div>
                     <div class="seasonal-card-title seasonal-card-title-songti">{term_name}</div>
                     <div class="seasonal-card-subtitle">
@@ -3390,6 +3447,9 @@ def render_seasonal_inspiration_card() -> None:
         """,
         unsafe_allow_html=True,
     )
+    with st.container(key="seasonal_card_trigger"):
+        st.button("open seasonal card", key="open_seasonal_card_button", on_click=open_seasonal_page)
+    render_seasonal_card_bridge()
 
 
 def run_seasonal_recommendation(preferences: dict, term_name: str, replace_mode: bool = False) -> None:
