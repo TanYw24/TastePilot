@@ -1,8 +1,11 @@
+import base64
 import os
 import smtplib
 from datetime import datetime
 from email.message import EmailMessage
+from pathlib import Path
 from random import randint
+from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
 import streamlit as st
@@ -38,6 +41,55 @@ init_db()
 
 LOGIN_COOKIE_NAME = "tastepilot_session"
 LOGIN_COOKIE_MAX_AGE = 30 * 24 * 60 * 60
+ASSET_DIR = Path(__file__).resolve().parent / "assets" / "inspiration"
+LIQIU_CARD_PATH = ASSET_DIR / "liqiu-card.png"
+LICHUN_CARD_PATH = ASSET_DIR / "lichun-card.png"
+LIXIA_CARD_PATH = ASSET_DIR / "lixia-card.png"
+LIDONG_CARD_PATH = ASSET_DIR / "lidong-card.png"
+LIQIU_SCENIC_BG_URL = "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1800&q=80"
+LICHUN_CARD_BG_URL = "https://images.unsplash.com/photo-1523978591478-c753949ff840?auto=format&fit=crop&w=1400&q=80"
+LIXIA_CARD_BG_URL = "https://images.unsplash.com/photo-1467453678174-768ec283a940?auto=format&fit=crop&w=1400&q=80"
+LIDONG_CARD_BG_URL = "https://images.unsplash.com/photo-1484318571209-661cf29a69c3?auto=format&fit=crop&w=1400&q=80"
+LICHUN_SCENIC_BG_URL = "https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=1800&q=80"
+LIXIA_SCENIC_BG_URL = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1800&q=80"
+LIDONG_SCENIC_BG_URL = "https://images.unsplash.com/photo-1483664852095-d6cc6870702d?auto=format&fit=crop&w=1800&q=80"
+HERO_DATE_FONT_STYLE = "editorial"
+
+_IMAGE_DATA_URI_CACHE: dict[Path, str] = {}
+
+
+def get_image_data_uri(path: Path) -> str:
+    if path in _IMAGE_DATA_URI_CACHE:
+        return _IMAGE_DATA_URI_CACHE[path]
+
+    mime_type = {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
+    }.get(path.suffix.lower())
+    if not mime_type:
+        return ""
+
+    try:
+        encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    except OSError:
+        return ""
+
+    data_uri = f"data:{mime_type};base64,{encoded}"
+    _IMAGE_DATA_URI_CACHE[path] = data_uri
+    return data_uri
+
+
+def resolve_image_source(image_ref: str | Path) -> str:
+    if isinstance(image_ref, Path):
+        return get_image_data_uri(image_ref)
+    return image_ref
+
+
+def format_hero_date_label(now: datetime | None = None) -> str:
+    current_dt = now or datetime.now(ZoneInfo("Asia/Shanghai"))
+    return f"{current_dt.month}月{current_dt.day}日"
 
 st.markdown(
     """
@@ -226,62 +278,103 @@ st.markdown(
     .hero-card {
         position: relative;
         overflow: hidden;
-        padding: 2.2rem 2.25rem;
+        padding: 1.6rem 1.7rem;
         border-radius: 34px;
         background: linear-gradient(
             145deg,
-            rgba(255, 248, 240, 0.78) 0%,
-            rgba(255, 241, 228, 0.58) 100%
+            rgba(255, 249, 243, 0.82) 0%,
+            rgba(255, 243, 232, 0.62) 100%
         );
         color: #4f2f24;
         box-shadow:
-            0 20px 44px rgba(151, 77, 39, 0.08),
+            0 16px 34px rgba(151, 77, 39, 0.07),
             inset 0 1px 0 rgba(255, 255, 255, 0.34);
-        margin-bottom: 1.25rem;
+        margin-bottom: 1rem;
         border: 1px solid rgba(255, 255, 255, 0.26);
         backdrop-filter: blur(10px) saturate(118%);
         -webkit-backdrop-filter: blur(10px) saturate(118%);
     }
-    .hero-title {
-        font-size: 3rem;
+    .hero-date {
+        position: absolute;
+        top: 1.25rem;
+        right: 1.45rem;
+        z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 112px;
+        padding: 0.52rem 0.9rem 0.46rem;
+        border-radius: 999px;
+        background: rgba(255, 249, 242, 0.5);
+        border: 1px solid rgba(230, 205, 184, 0.58);
+        box-shadow:
+            0 10px 22px rgba(152, 99, 66, 0.06),
+            inset 0 1px 0 rgba(255, 255, 255, 0.55);
+        color: #9a5b3a;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        line-height: 1;
+        white-space: nowrap;
+    }
+    .hero-date--editorial {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 1.08rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+    }
+    .hero-date--songti {
+        font-family: "Songti SC", "STSong", "Songti TC", serif;
+        font-size: 1.02rem;
         font-weight: 700;
-        margin-bottom: 0.55rem;
+        letter-spacing: 0.04em;
+    }
+    .hero-date--modern {
+        font-family: "Avenir Next", "Helvetica Neue", sans-serif;
+        font-size: 0.96rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+    .hero-title {
+        font-size: 2.7rem;
+        font-weight: 700;
+        margin-bottom: 0.42rem;
         color: #7d3127;
     }
     .hero-subtitle {
-        font-size: 1.08rem;
-        line-height: 1.8;
+        font-size: 1rem;
+        line-height: 1.68;
         color: #7a5644;
-        max-width: 560px;
+        max-width: 520px;
     }
     .hero-shell {
         display: grid;
-        grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
-        gap: 1.4rem;
+        grid-template-columns: minmax(0, 1.2fr) minmax(240px, 0.8fr);
+        gap: 1rem;
         align-items: center;
     }
     .hero-kicker {
         display: inline-block;
-        padding: 0.36rem 0.7rem;
+        padding: 0.3rem 0.62rem;
         border-radius: 999px;
         background: rgba(209, 108, 66, 0.12);
         color: #b25b33;
-        font-size: 0.8rem;
+        font-size: 0.74rem;
         letter-spacing: 0.1em;
         text-transform: uppercase;
-        margin-bottom: 1rem;
+        margin-bottom: 0.78rem;
     }
     .hero-visual {
         position: relative;
-        height: 290px;
-        border-radius: 28px;
+        height: 220px;
+        border-radius: 24px;
         background:
-            radial-gradient(circle at 30% 28%, rgba(255, 214, 170, 0.9), transparent 22%),
-            radial-gradient(circle at 72% 30%, rgba(255, 159, 109, 0.48), transparent 20%),
-            linear-gradient(145deg, rgba(255, 223, 194, 0.72) 0%, rgba(255, 198, 144, 0.56) 100%);
+            radial-gradient(circle at 28% 24%, rgba(255, 214, 170, 0.64), transparent 20%),
+            radial-gradient(circle at 74% 30%, rgba(255, 159, 109, 0.34), transparent 18%),
+            linear-gradient(145deg, rgba(255, 227, 201, 0.56) 0%, rgba(255, 206, 158, 0.42) 100%);
         box-shadow:
             inset 0 1px 0 rgba(255, 255, 255, 0.42),
-            0 12px 28px rgba(176, 112, 73, 0.08);
+            0 10px 20px rgba(176, 112, 73, 0.06);
     }
     .hero-shape {
         position: absolute;
@@ -289,30 +382,30 @@ st.markdown(
         transform: rotate(-7deg);
     }
     .hero-shape.one {
-        width: 158px;
-        height: 124px;
-        top: 38px;
-        left: 26px;
+        width: 112px;
+        height: 88px;
+        top: 30px;
+        left: 22px;
         background: linear-gradient(145deg, #fff5ee 0%, #ffe1cd 100%);
-        box-shadow: 0 18px 40px rgba(199, 109, 58, 0.18);
+        box-shadow: 0 12px 26px rgba(199, 109, 58, 0.14);
     }
     .hero-shape.two {
-        width: 138px;
-        height: 156px;
-        right: 34px;
-        top: 28px;
+        width: 102px;
+        height: 122px;
+        right: 24px;
+        top: 22px;
         background: linear-gradient(145deg, #d66a41 0%, #f29d62 100%);
         transform: rotate(10deg);
-        box-shadow: 0 18px 38px rgba(188, 96, 44, 0.22);
+        box-shadow: 0 14px 28px rgba(188, 96, 44, 0.18);
     }
     .hero-shape.three {
-        width: 208px;
-        height: 118px;
-        bottom: 26px;
-        left: 78px;
+        width: 160px;
+        height: 90px;
+        bottom: 20px;
+        left: 58px;
         background: linear-gradient(145deg, #82372d 0%, #ab4f33 100%);
         transform: rotate(-2deg);
-        box-shadow: 0 18px 44px rgba(125, 57, 33, 0.18);
+        box-shadow: 0 14px 30px rgba(125, 57, 33, 0.14);
     }
     .hero-dot {
         position: absolute;
@@ -320,48 +413,319 @@ st.markdown(
         background: rgba(255, 246, 236, 0.72);
     }
     .hero-dot.a {
-        width: 18px;
-        height: 18px;
-        right: 168px;
-        top: 46px;
+        width: 14px;
+        height: 14px;
+        right: 150px;
+        top: 42px;
     }
     .hero-dot.b {
-        width: 12px;
-        height: 12px;
-        right: 60px;
-        bottom: 108px;
+        width: 10px;
+        height: 10px;
+        right: 52px;
+        bottom: 82px;
     }
     .hero-mini-card {
         position: absolute;
-        padding: 0.8rem 0.95rem;
-        border-radius: 18px;
-        background: rgba(255, 250, 244, 0.54);
+        padding: 0.62rem 0.78rem;
+        border-radius: 16px;
+        background: rgba(255, 250, 244, 0.6);
         backdrop-filter: blur(12px) saturate(118%);
         -webkit-backdrop-filter: blur(12px) saturate(118%);
         box-shadow:
-            0 10px 22px rgba(157, 94, 55, 0.1),
+            0 8px 18px rgba(157, 94, 55, 0.08),
             inset 0 1px 0 rgba(255, 255, 255, 0.24);
         color: #714430;
-        font-size: 0.92rem;
+        font-size: 0.84rem;
     }
     .hero-mini-card.top {
-        top: 26px;
-        left: 122px;
+        top: 18px;
+        left: 88px;
     }
     .hero-mini-card.bottom {
-        right: 24px;
-        bottom: 20px;
+        right: 16px;
+        bottom: 16px;
     }
     .hero-mini-title {
-        font-size: 0.76rem;
+        font-size: 0.68rem;
         color: #b16742;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.18rem;
     }
     .hero-emoji {
         font-size: 1.4rem;
         margin-right: 0.3rem;
+    }
+    .seasonal-card-shell {
+        margin: 0.2rem 0 1rem;
+    }
+    .seasonal-card {
+        min-height: 340px;
+        border-radius: 30px;
+        overflow: hidden;
+        background-size: cover;
+        background-position: center;
+        box-shadow:
+            0 20px 40px rgba(130, 82, 49, 0.12),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.32);
+    }
+    .seasonal-card-overlay {
+        min-height: 340px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: flex-start;
+        padding: 1.6rem 1.7rem 1.55rem;
+        background:
+            linear-gradient(90deg, rgba(76, 49, 32, 0.1) 0%, rgba(76, 49, 32, 0.04) 25%, rgba(76, 49, 32, 0) 58%),
+            linear-gradient(180deg, rgba(255, 252, 245, 0.03) 0%, rgba(79, 46, 29, 0.16) 100%);
+    }
+    .seasonal-card-link,
+    .seasonal-card-link:link,
+    .seasonal-card-link:visited,
+    .seasonal-card-link:hover,
+    .seasonal-card-link:active {
+        position: absolute;
+        top: 1.15rem;
+        right: 1.2rem;
+        color: rgba(255, 250, 244, 0.94) !important;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        text-decoration: none !important;
+        text-shadow: 0 8px 18px rgba(68, 39, 22, 0.22);
+        border-bottom: none !important;
+        padding-bottom: 0;
+        transition: opacity 160ms ease;
+        -webkit-text-fill-color: rgba(255, 250, 244, 0.94) !important;
+    }
+    .seasonal-card-link:hover {
+        opacity: 0.86;
+    }
+    .seasonal-card-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.36rem;
+        padding: 0.36rem 0.72rem;
+        border-radius: 999px;
+        background: rgba(255, 250, 244, 0.76);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        color: #9a5a35;
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.82rem;
+        box-shadow: 0 8px 16px rgba(125, 76, 48, 0.08);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+    .seasonal-card-title {
+        color: #fffaf4;
+        font-size: 3rem;
+        line-height: 1;
+        margin-bottom: 0.55rem;
+        text-shadow: 0 10px 24px rgba(68, 39, 22, 0.26);
+    }
+    .seasonal-card-title-songti {
+        font-family: "Songti SC", "STSong", "Songti TC", serif;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+    }
+    .seasonal-card-subtitle {
+        max-width: 360px;
+        color: rgba(255, 250, 244, 0.94);
+        font-size: 1rem;
+        line-height: 1.7;
+        margin-bottom: 0.85rem;
+        text-shadow: 0 8px 18px rgba(68, 39, 22, 0.2);
+    }
+    .seasonal-card-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .seasonal-card-tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.34rem 0.74rem;
+        border-radius: 999px;
+        background: rgba(255, 249, 241, 0.82);
+        border: 1px solid rgba(255, 255, 255, 0.46);
+        color: #865137;
+        font-size: 0.84rem;
+        box-shadow: 0 8px 18px rgba(130, 82, 49, 0.08);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+    .seasonal-page-hero {
+        position: relative;
+        overflow: hidden;
+        min-height: 420px;
+        border-radius: 34px;
+        background-size: cover;
+        background-position: center;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        box-shadow:
+            0 22px 48px rgba(130, 82, 49, 0.12),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        margin-bottom: 1.1rem;
+    }
+    .seasonal-page-hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 18% 22%, rgba(255, 239, 215, 0.22), transparent 22%),
+            linear-gradient(135deg, rgba(109, 72, 46, 0.18), transparent 45%);
+        pointer-events: none;
+    }
+    .seasonal-page-overlay {
+        position: relative;
+        min-height: 420px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: 1.8rem 1.9rem;
+        background:
+            linear-gradient(90deg, rgba(62, 38, 25, 0.34) 0%, rgba(62, 38, 25, 0.12) 44%, rgba(62, 38, 25, 0.04) 100%),
+            linear-gradient(180deg, rgba(255, 252, 245, 0.06) 0%, rgba(54, 34, 23, 0.32) 100%);
+    }
+    .seasonal-page-route {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        margin-bottom: 0.72rem;
+        padding: 0.32rem 0.68rem;
+        border-radius: 999px;
+        background: rgba(77, 47, 28, 0.28);
+        border: 1px solid rgba(255, 244, 233, 0.22);
+        color: rgba(255, 248, 240, 0.88);
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+    .seasonal-page-kicker {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        padding: 0.42rem 0.82rem;
+        border-radius: 999px;
+        background: rgba(255, 250, 244, 0.8);
+        color: #9a5a35;
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.92rem;
+        border: 1px solid rgba(255, 255, 255, 0.52);
+    }
+    .seasonal-page-title {
+        color: #fffaf4;
+        font-family: "Songti SC", "STSong", "Songti TC", serif;
+        font-size: 3.15rem;
+        line-height: 1.04;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.58rem;
+        text-shadow: 0 12px 28px rgba(60, 35, 20, 0.3);
+    }
+    .seasonal-page-copy {
+        max-width: 680px;
+        color: rgba(255, 250, 244, 0.96);
+        font-size: 1.02rem;
+        line-height: 1.75;
+        margin-bottom: 0.92rem;
+        text-shadow: 0 8px 20px rgba(60, 35, 20, 0.22);
+    }
+    .seasonal-page-meta {
+        max-width: 620px;
+        color: rgba(255, 250, 244, 0.9);
+        font-size: 0.92rem;
+        line-height: 1.65;
+        margin-bottom: 0.92rem;
+    }
+    .seasonal-switch-label {
+        color: rgba(138, 55, 40, 0.74);
+        font-size: 0.84rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin: 0 0 0.55rem 0.15rem;
+    }
+    .st-key-seasonal_term_switcher [data-testid="stHorizontalBlock"] {
+        gap: 0.52rem !important;
+    }
+    .st-key-seasonal_term_switcher [data-testid="stButton"] > button {
+        min-height: 2.25rem;
+        border-radius: 999px;
+        padding: 0.18rem 0.9rem !important;
+        background: linear-gradient(180deg, rgba(255, 251, 246, 0.88), rgba(255, 244, 234, 0.78)) !important;
+        color: #8b5334 !important;
+        border: 1px solid rgba(221, 186, 157, 0.62) !important;
+        box-shadow:
+            0 8px 18px rgba(149, 97, 63, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+        font-size: 0.88rem !important;
+        font-weight: 700 !important;
+    }
+    .st-key-seasonal_term_switcher [data-testid="stButton"] > button:hover {
+        color: #7b4225 !important;
+        border-color: rgba(210, 167, 133, 0.82) !important;
+        background: linear-gradient(180deg, rgba(255, 253, 249, 0.96), rgba(255, 247, 238, 0.86)) !important;
+    }
+    .seasonal-page-actions {
+        margin: 0.15rem 0 1.15rem;
+    }
+    .st-key-seasonal_action_shell [data-testid="stHorizontalBlock"] {
+        gap: 0.75rem;
+    }
+    .st-key-seasonal_action_shell [data-testid="stButton"] > button {
+        min-height: 3.05rem;
+        border-radius: 18px;
+        font-weight: 700;
+    }
+    .st-key-seasonal_action_shell [data-testid="stColumn"]:first-child [data-testid="stButton"] > button {
+        background: linear-gradient(135deg, rgba(196, 88, 57, 0.92) 0%, rgba(229, 126, 79, 0.84) 100%) !important;
+        color: #fff7f0 !important;
+        border: 1px solid rgba(255, 231, 216, 0.26) !important;
+        box-shadow:
+            0 14px 28px rgba(176, 83, 49, 0.18),
+            inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+    }
+    .st-key-seasonal_action_shell [data-testid="stColumn"]:first-child [data-testid="stButton"] > button:hover {
+        background: linear-gradient(135deg, rgba(205, 93, 61, 0.95) 0%, rgba(236, 134, 87, 0.88) 100%) !important;
+    }
+    .st-key-seasonal_action_shell [data-testid="stColumn"]:last-child [data-testid="stButton"] > button {
+        background: linear-gradient(180deg, rgba(255, 251, 246, 0.78) 0%, rgba(255, 245, 237, 0.68) 100%) !important;
+        color: #8b5b42 !important;
+        border: 1px solid rgba(223, 192, 169, 0.78) !important;
+        box-shadow:
+            0 10px 20px rgba(154, 102, 72, 0.06),
+            inset 0 1px 0 rgba(255, 255, 255, 0.52) !important;
+    }
+    .st-key-seasonal_action_shell [data-testid="stColumn"]:last-child [data-testid="stButton"] > button:hover {
+        background: linear-gradient(180deg, rgba(255, 252, 248, 0.9) 0%, rgba(255, 247, 240, 0.8) 100%) !important;
+        color: #7b4d36 !important;
+    }
+    .seasonal-section-card {
+        padding: 1.25rem 1.28rem;
+        border-radius: 28px;
+        background: linear-gradient(180deg, rgba(255, 251, 246, 0.78), rgba(255, 247, 239, 0.64));
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        box-shadow:
+            0 12px 28px rgba(154, 102, 72, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.28);
+        color: #6c4531;
+        margin-bottom: 1rem;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+    .seasonal-section-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #7d3127;
+        margin-bottom: 0.35rem;
+    }
+    .seasonal-section-copy {
+        color: #7b5a47;
+        line-height: 1.7;
     }
     .section-note {
         padding: 1.1rem 1.2rem;
@@ -385,6 +749,34 @@ st.markdown(
         font-size: 0.88rem;
         margin: 0 0.35rem 0.35rem 0;
         border: 1px solid rgba(189, 122, 81, 0.2);
+    }
+    .seasonal-tag-groups {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+        margin: 0.1rem 0 0.7rem 0;
+    }
+    .seasonal-tag-group {
+        min-width: 180px;
+        padding: 0.78rem 0.86rem 0.58rem;
+        border-radius: 18px;
+        background: rgba(255, 248, 240, 0.14);
+        border: 1px solid rgba(255, 245, 236, 0.22);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+    .seasonal-tag-group-title {
+        color: rgba(255, 245, 236, 0.82);
+        font-size: 0.74rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 0.48rem;
+    }
+    .seasonal-tag-group .skill-chip {
+        background: rgba(255, 245, 233, 0.92);
+        color: #9f5b34;
+        border: 1px solid rgba(214, 169, 137, 0.34);
+        margin: 0 0.32rem 0.32rem 0;
     }
     .main-type-card {
         padding: 1rem 1.12rem 0.78rem;
@@ -427,27 +819,40 @@ st.markdown(
             inset 0 1px 0 rgba(255, 255, 255, 0.46) !important;
         color: #5e3b2a !important;
     }
-    .st-key-selected_main_types div[data-baseweb="tag"],
-    .st-key-main_type_picker div[data-baseweb="tag"] {
-        background: linear-gradient(180deg, rgba(255, 230, 204, 0.98) 0%, rgba(236, 151, 104, 0.92) 100%) !important;
-        color: #7a3423 !important;
-        border: 1px solid rgba(188, 104, 62, 0.34) !important;
+    .st-key-selected_main_types [data-baseweb="tag"],
+    .st-key-main_type_picker [data-baseweb="tag"] {
+        background: linear-gradient(180deg, rgba(248, 234, 223, 0.96) 0%, rgba(231, 203, 182, 0.92) 100%) !important;
+        color: #7b4f39 !important;
+        border: 1px solid rgba(177, 136, 109, 0.28) !important;
         border-radius: 999px !important;
         box-shadow:
-            0 8px 18px rgba(177, 94, 57, 0.12),
-            inset 0 1px 0 rgba(255, 255, 255, 0.38) !important;
+            0 6px 14px rgba(137, 102, 80, 0.10),
+            inset 0 1px 0 rgba(255, 255, 255, 0.42) !important;
         font-weight: 700 !important;
     }
-    .st-key-selected_main_types div[data-baseweb="tag"] span,
-    .st-key-selected_main_types div[data-baseweb="tag"] svg,
-    .st-key-selected_main_types div[data-baseweb="tag"] path,
+    .st-key-selected_main_types [data-baseweb="tag"] > *,
+    .st-key-main_type_picker [data-baseweb="tag"] > * {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .st-key-selected_main_types [data-baseweb="tag"] span,
+    .st-key-selected_main_types [data-baseweb="tag"] svg,
+    .st-key-selected_main_types [data-baseweb="tag"] path,
     .st-key-selected_main_types [class*="multiValue"],
-    .st-key-main_type_picker div[data-baseweb="tag"] span,
-    .st-key-main_type_picker div[data-baseweb="tag"] svg,
-    .st-key-main_type_picker div[data-baseweb="tag"] path,
+    .st-key-main_type_picker [data-baseweb="tag"] span,
+    .st-key-main_type_picker [data-baseweb="tag"] svg,
+    .st-key-main_type_picker [data-baseweb="tag"] path,
     .st-key-main_type_picker [class*="multiValue"] {
-        color: #7a3423 !important;
-        fill: #7a3423 !important;
+        color: #7b4f39 !important;
+        fill: #7b4f39 !important;
+        background: transparent !important;
+        -webkit-text-fill-color: #7b4f39 !important;
+    }
+    .st-key-selected_main_types [data-baseweb="tag"] [role="button"],
+    .st-key-main_type_picker [data-baseweb="tag"] [role="button"] {
+        background: transparent !important;
+        color: #7b4f39 !important;
     }
     .st-key-selected_main_types div[data-baseweb="select"] svg,
     .st-key-selected_main_types div[data-baseweb="select"] path,
@@ -458,15 +863,23 @@ st.markdown(
     }
     .st-key-selected_main_types div[data-baseweb="select"] input::placeholder,
     .st-key-main_type_picker div[data-baseweb="select"] input::placeholder {
-        color: rgba(94, 59, 42, 0.78) !important;
+        color: #8a4d2b !important;
         opacity: 1 !important;
     }
     .st-key-selected_main_types div[data-baseweb="select"] [class*="placeholder"],
     .st-key-selected_main_types div[data-baseweb="select"] [class*="Placeholder"],
     .st-key-main_type_picker div[data-baseweb="select"] [class*="placeholder"],
     .st-key-main_type_picker div[data-baseweb="select"] [class*="Placeholder"] {
-        color: rgba(94, 59, 42, 0.78) !important;
-        -webkit-text-fill-color: rgba(94, 59, 42, 0.78) !important;
+        color: #8a4d2b !important;
+        -webkit-text-fill-color: #8a4d2b !important;
+    }
+    .st-key-selected_main_types div[data-baseweb="select"] .st-dg.st-cq,
+    .st-key-main_type_picker div[data-baseweb="select"] .st-dg.st-cq,
+    .st-key-selected_main_types div[data-baseweb="select"] .st-dg.st-cq *,
+    .st-key-main_type_picker div[data-baseweb="select"] .st-dg.st-cq * {
+        color: #8a4d2b !important;
+        -webkit-text-fill-color: #8a4d2b !important;
+        opacity: 1 !important;
     }
     div[data-baseweb="popover"],
     div[data-baseweb="popover"] > div,
@@ -522,6 +935,29 @@ st.markdown(
     .prompt-skill-toggle {
         padding-top: 0;
         pointer-events: auto;
+    }
+    .prompt-skill-toggle [data-testid="stPopover"] > div:first-child {
+        width: 40px;
+        min-width: 40px;
+        max-width: 40px;
+    }
+    .prompt-skill-toggle [data-testid="stPopoverButton"] {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0 !important;
+        text-align: center !important;
+        padding: 0 !important;
+    }
+    .prompt-skill-toggle [data-testid="stPopoverButton"] > div {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;
+    }
+    .prompt-skill-toggle [data-testid="stPopoverButton"] svg,
+    .prompt-skill-toggle [data-testid="stPopoverButton"] path {
+        display: none !important;
     }
     .prompt-skill-tags {
         padding-top: 0.08rem;
@@ -642,6 +1078,40 @@ st.markdown(
         .main-type-copy,
         .main-type-warning {
             font-size: 0.8rem;
+        }
+        .seasonal-card,
+        .seasonal-card-overlay {
+            min-height: 286px;
+        }
+        .seasonal-card-overlay {
+            padding: 1.15rem 1.15rem 1.18rem;
+        }
+        .seasonal-card-link {
+            top: 0.95rem;
+            right: 1rem;
+            font-size: 0.82rem;
+        }
+        .seasonal-card-title {
+            font-size: 2.35rem;
+        }
+        .seasonal-card-subtitle {
+            max-width: 100%;
+            font-size: 0.92rem;
+        }
+        .seasonal-page-hero,
+        .seasonal-page-overlay {
+            min-height: 320px;
+        }
+        .seasonal-page-overlay {
+            padding: 1.2rem 1.2rem 1.28rem;
+        }
+        .seasonal-page-title {
+            font-size: 2.38rem;
+        }
+        .seasonal-page-copy,
+        .seasonal-page-meta {
+            max-width: 100%;
+            font-size: 0.92rem;
         }
         .st-key-prompt_actions {
             margin-top: -4.6rem !important;
@@ -825,6 +1295,13 @@ st.markdown(
         letter-spacing: 0.06em;
         margin: 0.08rem 0 0.18rem 0.15rem;
     }
+    .skill-group-meta {
+        display: inline-block;
+        margin-left: 0.4rem;
+        color: rgba(162, 126, 104, 0.58);
+        font-size: 0.72rem;
+        letter-spacing: 0.02em;
+    }
     .skill-hint {
         color: rgba(142, 116, 99, 0.74);
         font-size: 0.86rem;
@@ -941,6 +1418,27 @@ st.markdown(
             0 6px 14px rgba(170, 115, 78, 0.05),
             inset 0 1px 0 rgba(255, 255, 255, 0.32);
     }
+    .skill-section div[data-testid="stButton"] > button[kind="primary"] {
+        background: linear-gradient(
+            180deg,
+            rgba(245, 225, 208, 0.96) 0%,
+            rgba(232, 201, 177, 0.92) 100%
+        ) !important;
+        color: #7b4f39 !important;
+        border: 1px solid rgba(177, 136, 109, 0.34) !important;
+        box-shadow:
+            0 7px 14px rgba(137, 102, 80, 0.09),
+            inset 0 1px 0 rgba(255, 255, 255, 0.42) !important;
+    }
+    .skill-section div[data-testid="stButton"] > button[kind="primary"]:hover {
+        background: linear-gradient(
+            180deg,
+            rgba(247, 231, 217, 0.98) 0%,
+            rgba(236, 208, 186, 0.94) 100%
+        ) !important;
+        color: #744934 !important;
+        border: 1px solid rgba(177, 136, 109, 0.38) !important;
+    }
     div[data-testid="stPopover"] > button,
     div[data-testid="stPopover"] button {
         min-height: 2.3rem;
@@ -1039,6 +1537,34 @@ st.markdown(
         color: #7a4c33 !important;
         line-height: 1.3 !important;
     }
+    div[data-testid="stPopoverContent"] .skill-section div[data-testid="stButton"] > button[kind="primary"],
+    div[data-baseweb="popover"] .skill-section div[data-testid="stButton"] > button[kind="primary"] {
+        background: linear-gradient(
+            180deg,
+            rgba(231, 193, 167, 0.98) 0%,
+            rgba(214, 171, 141, 0.95) 100%
+        ) !important;
+        color: #693a25 !important;
+        border: 1px solid rgba(171, 120, 89, 0.68) !important;
+        box-shadow:
+            0 12px 24px rgba(143, 91, 61, 0.16),
+            0 0 0 1px rgba(255, 244, 234, 0.72),
+            inset 0 1px 0 rgba(255, 255, 255, 0.56) !important;
+    }
+    div[data-testid="stPopoverContent"] .skill-section div[data-testid="stButton"] > button[kind="primary"]:hover,
+    div[data-baseweb="popover"] .skill-section div[data-testid="stButton"] > button[kind="primary"]:hover {
+        background: linear-gradient(
+            180deg,
+            rgba(236, 202, 178, 1) 0%,
+            rgba(220, 179, 149, 0.98) 100%
+        ) !important;
+        color: #60311f !important;
+        border-color: rgba(159, 107, 77, 0.76) !important;
+    }
+    div[data-testid="stPopoverContent"] .skill-section div[data-testid="stButton"] > button[kind="primary"] p,
+    div[data-baseweb="popover"] .skill-section div[data-testid="stButton"] > button[kind="primary"] p {
+        color: #693a25 !important;
+    }
     div[data-baseweb="popover"] * {
         color: #7b5037;
     }
@@ -1100,11 +1626,17 @@ st.markdown(
         .hero-shell {
             grid-template-columns: 1fr;
         }
+        .hero-date {
+            top: 1rem;
+            right: 1rem;
+            min-width: 96px;
+            padding: 0.44rem 0.72rem 0.4rem;
+        }
         .hero-visual {
-            height: 240px;
+            height: 180px;
         }
         .hero-title {
-            font-size: 2.45rem;
+            font-size: 2.2rem;
         }
         .section-heading {
             font-size: 1.5rem;
@@ -1150,6 +1682,64 @@ MOOD_SKILL_GROUP = (
     ],
 )
 
+SKILL_GROUP_META = {
+    "此刻适合": "按时段精选",
+    "偏好方向": "按偏好精选",
+    "心情": "可多选",
+}
+
+SKILL_GROUP_DISPLAY_LIMITS = {
+    "此刻适合": 3,
+    "偏好方向": 4,
+    "心情": 3,
+}
+
+
+def build_skill_to_groups() -> dict[str, set[str]]:
+    skill_to_groups: dict[str, set[str]] = {}
+    all_groups = list(TIME_BASED_SKILL_GROUPS.values()) + [[MOOD_SKILL_GROUP]]
+    for group_list in all_groups:
+        for group_name, group_skills in group_list:
+            for skill_name, _ in group_skills:
+                skill_to_groups.setdefault(skill_name, set()).add(group_name)
+    return skill_to_groups
+
+
+SKILL_TO_GROUPS = build_skill_to_groups()
+
+SKILL_PREFERENCE_HINTS = {
+    "咖啡搭子": {"main_types": {"饮品", "甜品点心"}, "diet_goals": {"夜宵安慰"}},
+    "轻一点": {"favorite_flavors": {"清淡"}, "diet_goals": {"均衡饮食", "减脂清爽"}, "vegetarian_preferences": {"希望多素食", "严格素食"}},
+    "快手": {"time_limits": {"15 分钟内", "30 分钟内"}},
+    "下饭": {"diet_goals": {"下饭解馋"}, "main_types": {"正餐主食", "家常菜肴"}},
+    "省钱": {"budget_levels": {"低预算"}},
+    "下午茶": {"main_types": {"饮品", "甜品点心", "轻食早午餐"}},
+    "甜一点": {"main_types": {"甜品点心", "饮品"}, "diet_goals": {"夜宵安慰"}},
+    "治愈一点": {"diet_goals": {"夜宵安慰"}, "favorite_flavors": {"家常"}},
+    "聚餐": {"diet_goals": {"朋友聚餐"}, "main_types": {"家常菜肴", "正餐主食"}},
+    "夜宵": {"diet_goals": {"夜宵安慰"}},
+    "高蛋白": {"diet_goals": {"高蛋白增肌"}, "favorite_flavors": {"鲜香"}},
+    "奶香": {"main_types": {"甜品点心", "饮品"}, "favorite_flavors": {"酸甜"}},
+    "一个人": {"budget_levels": {"低预算"}, "time_limits": {"15 分钟内", "30 分钟内"}},
+    "暖胃": {"diet_goals": {"夜宵安慰"}, "main_types": {"汤锅粥羹"}},
+    "低糖": {"diet_goals": {"减脂清爽"}},
+    "香辣": {"favorite_flavors": {"香辣", "重口"}, "diet_goals": {"下饭解馋"}},
+    "解馋": {"diet_goals": {"下饭解馋"}, "favorite_flavors": {"重口", "鲜香"}},
+    "汤面": {"main_types": {"汤锅粥羹"}},
+    "果香": {"main_types": {"饮品", "甜品点心"}, "favorite_flavors": {"酸口", "酸甜"}},
+    "茶点": {"main_types": {"甜品点心", "饮品"}},
+    "清淡": {"favorite_flavors": {"清淡"}, "diet_goals": {"均衡饮食", "减脂清爽"}, "vegetarian_preferences": {"希望多素食", "严格素食"}},
+    "汤锅": {"main_types": {"汤锅粥羹"}},
+    "家常": {"favorite_flavors": {"家常", "酱香"}, "diet_goals": {"均衡饮食"}},
+    "不油腻": {"diet_goals": {"减脂清爽"}, "vegetarian_preferences": {"希望多素食", "严格素食"}},
+    "一人食": {"budget_levels": {"低预算"}, "time_limits": {"15 分钟内", "30 分钟内"}},
+    "安慰系": {"diet_goals": {"夜宵安慰"}, "favorite_flavors": {"家常", "酸甜"}},
+    "解压系": {"diet_goals": {"下饭解馋"}, "favorite_flavors": {"香辣", "重口"}},
+    "暖胃系": {"diet_goals": {"夜宵安慰"}, "main_types": {"汤锅粥羹"}},
+    "提神系": {"main_types": {"饮品"}, "time_limits": {"15 分钟内", "30 分钟内"}},
+    "犒赏系": {"diet_goals": {"朋友聚餐"}, "main_types": {"甜品点心", "饮品", "家常菜肴"}},
+}
+
 
 MAIN_TYPE_OPTIONS = ["正餐主食", "家常菜肴", "汤锅粥羹", "轻食早午餐", "甜品点心", "饮品"]
 MAIN_TYPE_HELP = {
@@ -1184,6 +1774,101 @@ MAIN_TYPE_STAPLE_COMPATIBILITY = {
     "甜品点心": {"甜品"},
     "饮品": {"饮品"},
 }
+
+SEASONAL_PAGE_CONFIG = {
+    "立春": {
+        "start_md": (2, 4),
+        "title": "立春时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": LICHUN_CARD_PATH,
+        "page_background_url": LICHUN_SCENIC_BG_URL,
+        "card_subtitle": "立春更适合从鲜嫩、清爽、带一点生机的味道开始想。先看香椿、春笋、春饼这些更像春天开场的东西。",
+        "intro": "立春之后，味觉适合先回到鲜嫩、清爽、带一点生机的方向。我们先把这段时节更应景的食材和菜，单独拎出来给你看。",
+        "seasonal_tags": ["立春", "春季时令", "咬春"],
+        "display_tags": ["鲜嫩", "清爽", "香椿", "春笋", "春饼"],
+        "display_tag_groups": {
+            "时令食材": ["香椿", "春笋", "荠菜"],
+            "适合口感": ["鲜嫩", "清爽"],
+        },
+        "card_tags": ["香椿", "春笋", "春饼", "春蔬小炒"],
+        "main_types": ["正餐主食", "家常菜肴", "轻食早午餐", "甜品点心", "饮品"],
+        "scene_note": "更适合春天刚开场时那种想吃得轻一点、鲜一点的胃口。",
+    },
+    "立夏": {
+        "start_md": (5, 5),
+        "title": "立夏时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": LIXIA_CARD_PATH,
+        "page_background_url": LIXIA_SCENIC_BG_URL,
+        "card_subtitle": "立夏更适合从清爽、带汁水、不过分厚重的味道开始想。番茄、黄瓜、嫩豌豆和轻盈小菜，会更像夏天刚开场的胃口。",
+        "intro": "立夏之后，适合先从清爽、带汁水、不过分厚重的味道开始想。我们先把这段时节更应景的食材和菜，单独拎出来给你看。",
+        "seasonal_tags": ["立夏", "夏季时令", "入夏"],
+        "display_tags": ["清爽", "脆嫩", "番茄", "黄瓜", "嫩豌豆"],
+        "display_tag_groups": {
+            "时令食材": ["番茄", "黄瓜", "嫩豌豆"],
+            "适合口感": ["清爽", "脆嫩"],
+        },
+        "card_tags": ["番茄", "黄瓜", "嫩豌豆", "清爽时蔬"],
+        "main_types": ["正餐主食", "家常菜肴", "轻食早午餐", "饮品"],
+        "scene_note": "更适合天气开始热起来时那种想吃得轻一点、凉快一点的节奏。",
+    },
+    "立秋": {
+        "start_md": (8, 7),
+        "title": "立秋时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": LIQIU_CARD_PATH,
+        "page_background_url": LIQIU_SCENIC_BG_URL,
+        "card_subtitle": "暑气未散，先吃一点清润、热乎、带秋意的东西。让“今天吃什么”，从这个时节开始想。",
+        "intro": "立秋之后，适合先从清润、热乎、带一点收敛感的味道开始想。我们先把这段时节更应景的菜，单独拎出来给你看。",
+        "seasonal_tags": ["立秋", "秋季时令", "咬秋"],
+        "display_tags": ["清润", "热汤", "梨", "莲藕", "玉米"],
+        "display_tag_groups": {
+            "时令食材": ["梨", "莲藕", "玉米"],
+            "适合口感": ["清润", "热汤"],
+        },
+        "card_tags": ["梨", "莲藕", "玉米", "清润热汤"],
+        "main_types": ["正餐主食", "家常菜肴", "汤锅粥羹", "甜品点心", "饮品"],
+        "scene_note": "更适合现在这段从盛夏转向初秋的胃口和节奏。",
+    },
+    "立冬": {
+        "start_md": (11, 7),
+        "title": "立冬时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": LIDONG_CARD_PATH,
+        "page_background_url": LIDONG_SCENIC_BG_URL,
+        "card_subtitle": "立冬更适合从热乎、扎实、能暖起来的味道开始想。白萝卜、大白菜、板栗和热炖锅，会更像冬天刚开场的一口。",
+        "intro": "立冬之后，适合先从热乎、扎实、能暖起来的味道开始想。我们先把这段时节更应景的食材和菜，单独拎出来给你看。",
+        "seasonal_tags": ["立冬", "冬季时令", "入冬"],
+        "display_tags": ["暖胃", "热炖", "白萝卜", "大白菜", "板栗"],
+        "display_tag_groups": {
+            "时令食材": ["白萝卜", "大白菜", "板栗"],
+            "适合口感": ["暖胃", "热炖"],
+        },
+        "card_tags": ["白萝卜", "大白菜", "板栗", "暖身炖锅"],
+        "main_types": ["正餐主食", "家常菜肴", "汤锅粥羹", "甜品点心"],
+        "scene_note": "更适合天气开始冷下来之后，那种想吃热乎、厚实一点的胃口。",
+    },
+}
+
+INSPIRATION_CARD_SCHEDULE = sorted(
+    [
+        {"name": term_name, "kind": "solar_term", "start_md": config["start_md"]}
+        for term_name, config in SEASONAL_PAGE_CONFIG.items()
+    ],
+    key=lambda item: item["start_md"],
+)
+
+
+def get_current_seasonal_term_name(now: datetime | None = None) -> str:
+    current_dt = now or datetime.now(ZoneInfo("Asia/Shanghai"))
+    month_day = (current_dt.month, current_dt.day)
+    active_term = INSPIRATION_CARD_SCHEDULE[-1]["name"]
+    for schedule_item in INSPIRATION_CARD_SCHEDULE:
+        if month_day >= tuple(schedule_item["start_md"]):
+            active_term = schedule_item["name"]
+        else:
+            break
+    return active_term
 
 
 SKILL_APPEND_TEXT = {
@@ -1264,6 +1949,12 @@ if "current_page" not in st.session_state:
     st.session_state.current_page = "recommend"
 if "profile_notice" not in st.session_state:
     st.session_state.profile_notice = ""
+if "seasonal_term" not in st.session_state:
+    st.session_state.seasonal_term = get_current_seasonal_term_name()
+if "seasonal_recommendations" not in st.session_state:
+    st.session_state.seasonal_recommendations = []
+if "seasonal_excluded_recipe_ids" not in st.session_state:
+    st.session_state.seasonal_excluded_recipe_ids = []
 
 
 def set_auth_mode(mode: str) -> None:
@@ -1271,7 +1962,7 @@ def set_auth_mode(mode: str) -> None:
     if mode == "forgot_password":
         st.query_params["auth_mode"] = "forgot_password"
     else:
-        st.query_params.clear()
+        st.query_params.pop("auth_mode", None)
 
 
 def sync_auth_mode_from_query() -> None:
@@ -1280,6 +1971,19 @@ def sync_auth_mode_from_query() -> None:
         st.session_state.auth_mode = "forgot_password"
     elif st.session_state.auth_mode == "forgot_password":
         st.session_state.auth_mode = "login"
+
+
+def sync_page_from_query() -> None:
+    page = st.query_params.get("page")
+    if page in {"recommend", "profile", "seasonal"}:
+        st.session_state.current_page = page
+
+
+def set_page_query(page: str) -> None:
+    st.query_params["page"] = page
+    st.query_params.pop("term", None)
+    st.query_params.pop("seasonal_debug", None)
+    st.query_params.pop("preview_term", None)
 
 
 def sync_login_cookie() -> None:
@@ -1469,6 +2173,30 @@ def render_tag_pills(tags: list[str]) -> str:
     return "".join(f'<span class="skill-chip">{tag}</span>' for tag in unique_tags)
 
 
+def render_seasonal_tag_groups(tag_groups: dict[str, list[str]] | None, fallback_tags: list[str]) -> str:
+    if not tag_groups:
+        return render_tag_pills(fallback_tags)
+
+    sections = []
+    for group_title, tags in tag_groups.items():
+        unique_tags = list(dict.fromkeys(tag for tag in tags if tag))
+        if not unique_tags:
+            continue
+        sections.append(
+            (
+                '<div class="seasonal-tag-group">'
+                f'<div class="seasonal-tag-group-title">{group_title}</div>'
+                f'{render_tag_pills(unique_tags)}'
+                "</div>"
+            )
+        )
+
+    if not sections:
+        return render_tag_pills(fallback_tags)
+
+    return f'<div class="seasonal-tag-groups">{"".join(sections)}</div>'
+
+
 def logout() -> None:
     session_token = st.session_state.get("auth_session_token")
     if session_token:
@@ -1487,11 +2215,17 @@ def logout() -> None:
     st.session_state.preference_notice = ""
     st.session_state.profile_notice = ""
     st.session_state.current_page = "recommend"
+    st.session_state.seasonal_term = get_current_seasonal_term_name()
+    st.session_state.seasonal_recommendations = []
+    st.session_state.seasonal_excluded_recipe_ids = []
 
 
 def apply_skill(skill_name: str) -> None:
-    if skill_name not in st.session_state.selected_skills:
-        st.session_state.selected_skills.append(skill_name)
+    if skill_name in st.session_state.selected_skills:
+        remove_skill(skill_name)
+        return
+
+    st.session_state.selected_skills.append(skill_name)
 
     snippet = SKILL_APPEND_TEXT[skill_name]
     if snippet not in st.session_state.prompt_text:
@@ -1530,10 +2264,22 @@ def clear_prompt() -> None:
 
 def open_profile_page() -> None:
     st.session_state.current_page = "profile"
+    set_page_query("profile")
 
 
 def open_recommend_page() -> None:
     st.session_state.current_page = "recommend"
+    set_page_query("recommend")
+
+
+def open_seasonal_page() -> None:
+    st.session_state.current_page = "seasonal"
+    next_term = get_current_seasonal_term_name()
+    if st.session_state.seasonal_term != next_term:
+        st.session_state.seasonal_recommendations = []
+        st.session_state.seasonal_excluded_recipe_ids = []
+    st.session_state.seasonal_term = next_term
+    set_page_query("seasonal")
 
 
 def on_main_type_change() -> None:
@@ -1678,17 +2424,74 @@ def render_profile_page() -> None:
         )
 
 
-def get_dynamic_skill_groups() -> tuple[str, list[tuple[str, list[tuple[str, str]]]]]:
+def _get_skill_time_context() -> tuple[str, str]:
     current_hour = datetime.now(ZoneInfo("Asia/Shanghai")).hour
     if 5 <= current_hour < 11:
-        return "早上", TIME_BASED_SKILL_GROUPS["morning"] + [MOOD_SKILL_GROUP]
+        return "早上", "morning"
     if 11 <= current_hour < 15:
-        return "中午", TIME_BASED_SKILL_GROUPS["lunch"] + [MOOD_SKILL_GROUP]
+        return "中午", "lunch"
     if 15 <= current_hour < 18:
-        return "下午", TIME_BASED_SKILL_GROUPS["afternoon"] + [MOOD_SKILL_GROUP]
+        return "下午", "afternoon"
     if 18 <= current_hour < 22:
-        return "晚上", TIME_BASED_SKILL_GROUPS["evening"] + [MOOD_SKILL_GROUP]
-    return "深夜", TIME_BASED_SKILL_GROUPS["night"] + [MOOD_SKILL_GROUP]
+        return "晚上", "evening"
+    return "深夜", "night"
+
+
+def _score_skill_for_preferences(skill_name: str, preferences: dict) -> int:
+    score = 0
+    hints = SKILL_PREFERENCE_HINTS.get(skill_name, {})
+    favorite_flavors = set(filter(None, str(preferences.get("favorite_flavors", "")).split("|")))
+    selected_main_types = set(st.session_state.get("selected_main_types", []))
+    budget_level = preferences.get("budget_level", "")
+    time_limit = preferences.get("cooking_time_limit", "")
+    diet_goal = preferences.get("diet_goal", "")
+    vegetarian_preference = preferences.get("vegetarian_preference", "")
+
+    if favorite_flavors.intersection(hints.get("favorite_flavors", set())):
+        score += 4
+    if selected_main_types.intersection(hints.get("main_types", set())):
+        score += 3
+    if budget_level and budget_level in hints.get("budget_levels", set()):
+        score += 3
+    if time_limit and time_limit in hints.get("time_limits", set()):
+        score += 3
+    if diet_goal and diet_goal in hints.get("diet_goals", set()):
+        score += 4
+    if vegetarian_preference and vegetarian_preference in hints.get("vegetarian_preferences", set()):
+        score += 2
+    if skill_name in st.session_state.get("selected_skills", []):
+        score += 1
+    return score
+
+
+def _build_ranked_skill_group(
+    group_name: str,
+    skills: list[tuple[str, str]],
+    preferences: dict,
+) -> list[tuple[str, str]]:
+    ranked: list[tuple[int, int, str, str]] = []
+    for index, (skill_name, skill_desc) in enumerate(skills):
+        ranked.append(
+            (
+                _score_skill_for_preferences(skill_name, preferences),
+                -index,
+                skill_name,
+                skill_desc,
+            )
+        )
+    ranked.sort(reverse=True)
+    limit = SKILL_GROUP_DISPLAY_LIMITS.get(group_name, len(skills))
+    return [(skill_name, skill_desc) for _, _, skill_name, skill_desc in ranked[:limit]]
+
+
+def get_dynamic_skill_groups(preferences: dict) -> tuple[str, list[tuple[str, list[tuple[str, str]]]]]:
+    time_label, time_key = _get_skill_time_context()
+    base_groups = TIME_BASED_SKILL_GROUPS[time_key] + [MOOD_SKILL_GROUP]
+    ranked_groups = [
+        (group_name, _build_ranked_skill_group(group_name, group_skills, preferences))
+        for group_name, group_skills in base_groups
+    ]
+    return time_label, ranked_groups
 
 
 def render_selected_skills() -> None:
@@ -1771,6 +2574,13 @@ def render_prompt_tool_button_bridge() -> None:
             zIndex: '1001',
             margin: '0',
             padding: '0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0',
+          });
+          plusButton.querySelectorAll('svg').forEach((icon) => {
+            icon.style.display = 'none';
           });
         }
 
@@ -1797,6 +2607,128 @@ def render_prompt_tool_button_bridge() -> None:
           window.parent.removeEventListener('resize', schedulePromptToolButtonPlacement);
           window.parent.removeEventListener('scroll', schedulePromptToolButtonPlacement, true);
         }, { once: true });
+        </script>
+        """,
+        height=0,
+    )
+
+
+def render_main_type_arrow_bridge() -> None:
+    components.html(
+        """
+        <script>
+        const parentDoc = window.parent.document;
+
+        function bindMainTypeArrowBehavior() {
+          const root = parentDoc.querySelector('.st-key-selected_main_types div[data-baseweb="select"]');
+          if (!root || root.dataset.tastepilotArrowBound === "1") {
+            return;
+          }
+          root.dataset.tastepilotArrowBound = "1";
+
+          const getCombobox = () => root.querySelector('input[role="combobox"]');
+          const getArrow = () => root.querySelector('svg[title="open"]');
+
+          const syncArrow = () => {
+            const combobox = getCombobox();
+            const arrow = getArrow();
+            if (!combobox || !arrow) {
+              return;
+            }
+            const expanded = combobox.getAttribute("aria-expanded") === "true";
+            arrow.style.transition = "transform 160ms ease";
+            arrow.style.transform = expanded ? "rotate(180deg)" : "rotate(0deg)";
+          };
+
+          root.addEventListener(
+            "mousedown",
+            (event) => {
+              const arrow = getArrow();
+              const combobox = getCombobox();
+              if (!arrow || !combobox) {
+                return;
+              }
+
+              const clickedArrow = arrow === event.target || arrow.contains(event.target);
+              if (!clickedArrow) {
+                window.parent.setTimeout(syncArrow, 30);
+                return;
+              }
+
+              const expanded = combobox.getAttribute("aria-expanded") === "true";
+              if (!expanded) {
+                window.parent.setTimeout(syncArrow, 30);
+                window.parent.setTimeout(syncArrow, 140);
+                return;
+              }
+
+              event.preventDefault();
+              event.stopPropagation();
+
+              const bodyEventInit = {
+                bubbles: true,
+                cancelable: true,
+                composed: true,
+                view: window.parent,
+                clientX: 8,
+                clientY: 8,
+                button: 0,
+              };
+              if (typeof combobox.focus === "function") {
+                combobox.focus();
+              }
+              combobox.dispatchEvent(
+                new KeyboardEvent("keydown", {
+                  key: "Escape",
+                  code: "Escape",
+                  keyCode: 27,
+                  which: 27,
+                  bubbles: true,
+                  cancelable: true,
+                })
+              );
+              combobox.dispatchEvent(
+                new KeyboardEvent("keyup", {
+                  key: "Escape",
+                  code: "Escape",
+                  keyCode: 27,
+                  which: 27,
+                  bubbles: true,
+                  cancelable: true,
+                })
+              );
+              ["mousedown", "mouseup", "click"].forEach((type) => {
+                parentDoc.body.dispatchEvent(new MouseEvent(type, bodyEventInit));
+              });
+
+              window.parent.setTimeout(syncArrow, 30);
+              window.parent.setTimeout(syncArrow, 140);
+              window.parent.setTimeout(syncArrow, 260);
+            },
+            true
+          );
+
+          const observer = new MutationObserver(syncArrow);
+          observer.observe(root, {
+            subtree: true,
+            childList: true,
+            attributes: true,
+            attributeFilter: ["aria-expanded", "style", "class"],
+          });
+          syncArrow();
+        }
+
+        bindMainTypeArrowBehavior();
+
+        const pageObserver = new MutationObserver(bindMainTypeArrowBehavior);
+        pageObserver.observe(parentDoc.body, { subtree: true, childList: true, attributes: true });
+        window.addEventListener(
+          "beforeunload",
+          () => {
+            pageObserver.disconnect();
+          },
+          { once: true }
+        );
         </script>
         """,
         height=0,
@@ -2091,6 +3023,8 @@ def render_sidebar(preferences: dict) -> None:
         st.markdown("---")
         st.markdown("## 进入哪里")
         if st.button("智能推荐主页", on_click=open_recommend_page, use_container_width=True):
+            pass
+        if st.button("节气时令推荐", on_click=open_seasonal_page, use_container_width=True):
             pass
         if st.button("我的口味画像", on_click=open_profile_page, use_container_width=True):
             pass
@@ -2425,21 +3359,139 @@ def get_follow_up_actions() -> list[tuple[str, str]]:
     return deduped[:4]
 
 
+def render_seasonal_inspiration_card() -> None:
+    term_name = get_current_seasonal_term_name()
+    config = SEASONAL_PAGE_CONFIG.get(term_name, SEASONAL_PAGE_CONFIG[get_current_seasonal_term_name()])
+    background_image = resolve_image_source(config["image_path"])
+    term_link = "?page=seasonal"
+    background_style = (
+        f"background-image: linear-gradient(180deg, rgba(255, 248, 239, 0.08), rgba(84, 54, 35, 0.14)), url('{background_image}');"
+        if background_image
+        else "background: linear-gradient(135deg, rgba(253, 239, 213, 0.96), rgba(201, 153, 104, 0.78));"
+    )
+
+    st.markdown(
+        f"""
+        <div class="seasonal-card-shell">
+            <div class="seasonal-card" style="{background_style}">
+                <div class="seasonal-card-overlay">
+                    <a class="seasonal-card-link" href="{term_link}">点击灵感卡，前往当前节气专题页 &gt;&gt;</a>
+                    <div class="seasonal-card-kicker">节气灵感 · Solar Term</div>
+                    <div class="seasonal-card-title seasonal-card-title-songti">{term_name}</div>
+                    <div class="seasonal-card-subtitle">
+                        {config.get("card_subtitle", config["intro"])}
+                    </div>
+                    <div class="seasonal-card-tags">
+                        {"".join(f'<span class="seasonal-card-tag">{tag}</span>' for tag in config.get("card_tags", config["display_tags"][:4]))}
+                    </div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def run_seasonal_recommendation(preferences: dict, term_name: str, replace_mode: bool = False) -> None:
+    config = SEASONAL_PAGE_CONFIG.get(term_name)
+    if not config:
+        st.session_state.seasonal_recommendations = []
+        return
+
+    excluded_ids = st.session_state.seasonal_excluded_recipe_ids if replace_mode else []
+    query = {
+        "scene": "",
+        "favorite_flavors": [],
+        "required_flavors": [],
+        "diet_goal": "",
+        "budget_level": preferences.get("budget_level", "中等预算"),
+        "cooking_time_limit": preferences.get("cooking_time_limit", "30 分钟内"),
+        "vegetarian_preference": preferences.get("vegetarian_preference", "不限"),
+        "disliked_ingredients": preferences.get("disliked_ingredients", ""),
+        "preferred_course_types": [],
+        "avoid_course_types": [],
+        "intent_tags": [],
+        "mood_search_tags": [],
+        "beverage_categories": [],
+        "main_types": config.get("main_types", []),
+        "staple_categories": [],
+        "solar_terms": config.get("seasonal_tags", [term_name]),
+        "cuisine_groups": [],
+        "primary_bucket": None,
+        "mood_bucket": None,
+        "mood_detected": None,
+        "main_type_conflict": False,
+        "conflicting_main_types": [],
+    }
+    recommendations = recommend_recipes(
+        query=query,
+        preferences=preferences,
+        user_id=st.session_state.user["id"],
+        limit=6,
+        exclude_recipe_ids=excluded_ids,
+    )
+    if replace_mode and recommendations:
+        st.session_state.seasonal_excluded_recipe_ids.extend([item["id"] for item in recommendations])
+        st.session_state.seasonal_excluded_recipe_ids = list(dict.fromkeys(st.session_state.seasonal_excluded_recipe_ids))
+    elif recommendations:
+        st.session_state.seasonal_excluded_recipe_ids = [item["id"] for item in recommendations]
+    st.session_state.seasonal_recommendations = recommendations
+
+
+def render_recommendation_cards(
+    recommendations: list[dict],
+    title: str,
+    key_prefix: str,
+) -> None:
+    if not recommendations:
+        return
+
+    st.markdown(f'<div class="followup-title">{title}</div>', unsafe_allow_html=True)
+    for recipe in recommendations:
+        st.markdown(
+            f"""
+            <div class="recipe-card">
+                <div class="recipe-title">{recipe['name']}</div>
+                <div>{render_tag_pills(recipe['display_tags'])}</div>
+                <p><strong>为什么推荐你：</strong>{recipe['reason']}</p>
+                <p class="metric-line">
+                    {recipe['cook_time_minutes']} 分钟 ｜ {recipe['budget_level']} ｜ {recipe['difficulty']}难度
+                </p>
+                <p><strong>主要食材：</strong>{recipe['ingredients']}</p>
+                <p>{recipe['description']}</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        col1, col2, col3 = st.columns([0.95, 0.95, 1.1])
+        if col1.button(f"就吃这个", key=f"{key_prefix}_pick_{recipe['id']}", use_container_width=True):
+            record_action(st.session_state.user["id"], recipe["id"], "favorite")
+            st.success(f"已帮你记住你喜欢 {recipe['name']}。")
+        if col2.button(f"先收藏", key=f"{key_prefix}_favorite_{recipe['id']}", use_container_width=True):
+            record_action(st.session_state.user["id"], recipe["id"], "favorite")
+            st.success(f"已收藏 {recipe['name']}。")
+        if col3.button(f"不太像我想吃的", key=f"{key_prefix}_skip_{recipe['id']}", use_container_width=True):
+            record_action(st.session_state.user["id"], recipe["id"], "skip")
+            st.info(f"已记下你这次不太想吃 {recipe['name']}。")
+
+
 def render_input_area(preferences: dict) -> None:
-    time_label, active_skill_groups = get_dynamic_skill_groups()
+    time_label, active_skill_groups = get_dynamic_skill_groups(preferences)
+    hero_date_label = format_hero_date_label()
     if st.session_state.sync_prompt_input:
         st.session_state.prompt_text_input = st.session_state.prompt_text
         st.session_state.sync_prompt_input = False
 
     st.markdown(
-        """
+        f"""
         <div class="hero-card">
+            <div class="hero-date hero-date--{HERO_DATE_FONT_STYLE}">{hero_date_label}</div>
             <div class="hero-shell">
                 <div>
-                    <div class="hero-kicker">Smart Dinner Picks</div>
+                    <div class="hero-kicker">Smart Food Picks</div>
                     <div class="hero-title">TastePilot</div>
                     <div class="hero-subtitle">
-                        把你现在想吃的感觉告诉我，我来帮你决定今晚吃什么。少一点筛选，多一点被理解，
+                        把你现在想吃的感觉告诉我，我来帮你决定这顿吃什么。少一点筛选，多一点被理解，
                         这是一个会记住你口味偏好的个人菜谱顾问。
                     </div>
                 </div>
@@ -2450,12 +3502,12 @@ def render_input_area(preferences: dict) -> None:
                     <div class="hero-dot a"></div>
                     <div class="hero-dot b"></div>
                     <div class="hero-mini-card top">
-                        <div class="hero-mini-title">Tonight</div>
-                        <span class="hero-emoji">🍲</span> 快一点，也好吃一点
+                        <div class="hero-mini-title">Right Now</div>
+                        <span class="hero-emoji">🍲</span> 快一点，也更对味一点
                     </div>
                     <div class="hero-mini-card bottom">
                         <div class="hero-mini-title">Mood Board</div>
-                        <span class="hero-emoji">✨</span> 香辣 / 家常 / 放松
+                        <span class="hero-emoji">✨</span> 香辣 / 清爽 / 治愈
                     </div>
                 </div>
             </div>
@@ -2463,6 +3515,7 @@ def render_input_area(preferences: dict) -> None:
         """,
         unsafe_allow_html=True,
     )
+    render_seasonal_inspiration_card()
     st.markdown(
         """
         <div class="prompt-card">
@@ -2493,6 +3546,7 @@ def render_input_area(preferences: dict) -> None:
         label_visibility="collapsed",
         on_change=on_main_type_change,
     )
+    render_main_type_arrow_bridge()
     st.text_area(
         "输入一句话",
         key="prompt_text_input",
@@ -2513,9 +3567,19 @@ def render_input_area(preferences: dict) -> None:
             with st.popover("＋"):
                 for group_name, group_skills in active_skill_groups:
                     st.markdown(
-                        f'<div class="skill-section"><div class="skill-group-label">{group_name}</div></div>',
+                        (
+                            '<div class="skill-section">'
+                            f'<div class="skill-group-label">{group_name}'
+                            f'<span class="skill-group-meta">{SKILL_GROUP_META.get(group_name, "")}</span>'
+                            "</div></div>"
+                        ),
                         unsafe_allow_html=True,
                     )
+                    if group_name == "偏好方向":
+                        st.markdown(
+                            '<div class="skill-popover-note">结合你当前时段、已选大类和长期偏好，先给你更值得点的几个。</div>',
+                            unsafe_allow_html=True,
+                        )
                     cols = st.columns(3)
                     for index, (skill_name, skill_desc) in enumerate(group_skills):
                         with cols[index % 3]:
@@ -2525,6 +3589,7 @@ def render_input_area(preferences: dict) -> None:
                                 help=skill_desc,
                                 on_click=apply_skill,
                                 args=(skill_name,),
+                                type="primary" if skill_name in st.session_state.selected_skills else "secondary",
                                 use_container_width=True,
                             )
             st.markdown("</div>", unsafe_allow_html=True)
@@ -2579,36 +3644,7 @@ def render_input_area(preferences: dict) -> None:
 
 def render_recipe_cards() -> None:
     recommendations = st.session_state.recommendations
-    if not recommendations:
-        return
-
-    st.markdown('<div class="followup-title">今晚先看这 3 个</div>', unsafe_allow_html=True)
-    for recipe in recommendations:
-        st.markdown(
-            f"""
-            <div class="recipe-card">
-                <div class="recipe-title">{recipe['name']}</div>
-                <div>{render_tag_pills(recipe['display_tags'])}</div>
-                <p><strong>为什么推荐你：</strong>{recipe['reason']}</p>
-                <p class="metric-line">
-                    {recipe['cook_time_minutes']} 分钟 ｜ {recipe['budget_level']} ｜ {recipe['difficulty']}难度
-                </p>
-                <p><strong>主要食材：</strong>{recipe['ingredients']}</p>
-                <p>{recipe['description']}</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        col1, col2, col3 = st.columns([0.95, 0.95, 1.1])
-        if col1.button(f"就吃这个", key=f"pick_{recipe['id']}", use_container_width=True):
-            record_action(st.session_state.user["id"], recipe["id"], "favorite")
-            st.success(f"已帮你记住你喜欢 {recipe['name']}。")
-        if col2.button(f"先收藏", key=f"favorite_{recipe['id']}", use_container_width=True):
-            record_action(st.session_state.user["id"], recipe["id"], "favorite")
-            st.success(f"已收藏 {recipe['name']}。")
-        if col3.button(f"不太像我想吃的", key=f"skip_{recipe['id']}", use_container_width=True):
-            record_action(st.session_state.user["id"], recipe["id"], "skip")
-            st.info(f"已记下你这次不太想吃 {recipe['name']}。")
+    render_recommendation_cards(recommendations, "今晚先看这 3 个", "home")
 
 
 def render_follow_up_actions(preferences: dict) -> None:
@@ -2633,8 +3669,95 @@ def render_follow_up_actions(preferences: dict) -> None:
                 st.rerun()
 
 
+def render_seasonal_page(preferences: dict) -> None:
+    current_term_name = get_current_seasonal_term_name()
+    st.session_state.seasonal_term = current_term_name
+    term_name = st.session_state.get("seasonal_term", current_term_name)
+    config = SEASONAL_PAGE_CONFIG.get(term_name, SEASONAL_PAGE_CONFIG[current_term_name])
+    if term_name not in SEASONAL_PAGE_CONFIG:
+        st.session_state.seasonal_term = current_term_name
+        term_name = current_term_name
+        config = SEASONAL_PAGE_CONFIG[term_name]
+
+    if not st.session_state.seasonal_recommendations:
+        run_seasonal_recommendation(preferences, term_name)
+
+    scenic_background_url = config.get("page_background_url", "")
+    if scenic_background_url:
+        st.markdown(
+            f"""
+            <style>
+            .stApp {{
+                background-image:
+                    linear-gradient(rgba(252, 248, 242, 0.78), rgba(248, 241, 232, 0.82)),
+                    url("{scenic_background_url}");
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                background-attachment: fixed;
+            }}
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    background_image = resolve_image_source(config["image_path"])
+    background_style = (
+        f"background-image: url('{background_image}');"
+        if background_image
+        else "background: linear-gradient(135deg, rgba(253, 239, 213, 0.96), rgba(201, 153, 104, 0.78));"
+    )
+
+    st.markdown(
+        f"""
+        <div class="seasonal-page-hero" style="{background_style}">
+            <div class="seasonal-page-overlay">
+                <div class="seasonal-page-route">Seasonal Editorial · {term_name}</div>
+                <div class="seasonal-page-kicker">{config['kicker']}</div>
+                <div class="seasonal-page-title">{config['title']}</div>
+                <div class="seasonal-page-copy">{config['intro']}</div>
+                <div>{render_seasonal_tag_groups(config.get('display_tag_groups'), config['display_tags'])}</div>
+                <div class="seasonal-page-meta">{config['scene_note']}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    with st.container(key="seasonal_action_shell"):
+        action_col1, action_col2 = st.columns([1.1, 0.9], gap="small")
+        with action_col1:
+            if st.button("换一批这个时节的菜", key=f"refresh_seasonal_{term_name}", use_container_width=True):
+                run_seasonal_recommendation(preferences, term_name, replace_mode=True)
+                st.rerun()
+        with action_col2:
+            if st.button("返回智能推荐主页", key=f"back_home_{term_name}", use_container_width=True):
+                open_recommend_page()
+                st.rerun()
+
+    st.markdown(
+        """
+        <div class="seasonal-section-card">
+            <div class="seasonal-section-title">这页会给你什么</div>
+            <div class="seasonal-section-copy">
+                这里先不走模糊输入，而是先把这段时节更应景的菜品单独拎出来。你可以把它理解成
+                “最近值得吃什么”的轻专题页。
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    recommendations = st.session_state.seasonal_recommendations
+    if recommendations:
+        render_recommendation_cards(recommendations, f"先看看这批 {term_name} 时令菜", f"seasonal_{term_name}")
+    else:
+        st.info("这一页暂时还没筛出合适的时令菜，我们可以继续补更丰富的节气内容。")
+
+
 def main() -> None:
     sync_auth_mode_from_query()
+    sync_page_from_query()
     restore_login_session()
     sync_login_cookie()
     render_sidebar_toggle_bridge()
@@ -2647,6 +3770,8 @@ def main() -> None:
     render_sidebar(preferences)
     if st.session_state.current_page == "profile":
         render_profile_page()
+    elif st.session_state.current_page == "seasonal":
+        render_seasonal_page(preferences)
     else:
         render_input_area(preferences)
         render_recipe_cards()

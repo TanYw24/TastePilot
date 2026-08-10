@@ -17,9 +17,13 @@ from db import (
     record_query_signal,
 )
 from recipe_taxonomy import (
+    add_compatibility_fields,
     build_display_tags,
     classify_beverage_category,
+    classify_cuisine_group,
+    classify_food_origin,
     classify_main_type,
+    classify_regional_cuisine,
     classify_staple_category,
     get_recipe_profile_tags,
     SOLAR_TERMS,
@@ -31,6 +35,58 @@ _TIME_RANK = {"15 分钟内": 15, "30 分钟内": 30, "45 分钟内": 45, "60 �
 _PROFILE_ACTION_WEIGHTS = {"favorite": 5.5, "view": 2.4, "skip": -3.8}
 _PROFILE_FEEDBACK_WEIGHTS = {"confirm": 4.5, "downvote": -5.5}
 _TIME_SLOT_LABELS = ["早餐", "午餐", "下午茶", "晚餐", "夜宵"]
+_LEGACY_MAIN_TYPE_MAP = {
+    "正餐主食": "正餐",
+    "家常菜肴": "正餐",
+    "汤锅粥羹": "正餐",
+    "轻食早午餐": "轻食早午餐",
+    "甜品点心": "甜品",
+    "饮品": "饮品",
+}
+_LEGACY_STAPLE_MAP = {
+    "饭类": {"饭类"},
+    "面类": {"面类"},
+    "粉类": {"粉类"},
+    "饼类": {"饼类"},
+    "锅物": {"锅汤类"},
+    "汤粥": {"锅汤类"},
+    "菜肴": {"菜肴类"},
+    "面包三明治": {"三明治贝果类", "吐司卷饼类"},
+    "轻食": {"沙拉碗类", "早餐碗类", "轻主食类"},
+    "甜品": {"蛋糕类", "布丁冻品类", "中式甜品类", "冰品类", "烘焙点心类"},
+    "饮品": {"咖啡类", "茶饮类", "奶茶类", "果饮类", "气泡饮类", "奶昔类", "热饮类"},
+}
+_LEGACY_BEVERAGE_MAP = {
+    "咖啡": {"咖啡类"},
+    "茶饮": {"茶饮类"},
+    "奶茶": {"奶茶类"},
+    "果茶": {"果饮类"},
+    "果饮": {"果饮类"},
+    "气泡饮": {"气泡饮类"},
+    "奶昔": {"奶昔类"},
+    "热饮": {"热饮类"},
+    "特调饮品": {"果饮类", "茶饮类"},
+}
+_LEGACY_CUISINE_MAP = {
+    "中式家常": {"中式家常", "江浙", "西北风味", "云贵风味", "闽味"},
+    "川渝湘辣": {"川菜", "湘菜"},
+    "川菜湘菜": {"川菜", "湘菜"},
+    "粤港风味": {"粤菜", "港式"},
+    "粤港": {"粤菜", "港式"},
+    "台式风味": {"台式"},
+    "台式": {"台式"},
+    "日式": {"日式"},
+    "韩式": {"韩式"},
+    "东南亚风味": {"泰式", "越式", "南洋风味"},
+    "东南亚": {"泰式", "越式", "南洋风味"},
+    "意式": {"意式"},
+    "西式": {"法式西餐", "美式西餐", "西式轻食", "西式甜点"},
+    "拉美风味": {"墨西哥风味", "拉美风味"},
+    "轻食早午餐": {"西式轻食"},
+    "甜品烘焙": {"西式甜点", "中式甜品"},
+    "中式甜品": {"中式甜品"},
+    "饮品特调": {"饮品特调"},
+}
 
 init_db()
 
@@ -79,9 +135,45 @@ def get_recipe_feature_tags(recipe: dict) -> list[str]:
     return parse_tags(recipe.get("feature_tags", ""))
 
 
+def get_recipe_seasonal_terms(recipe: dict) -> list[str]:
+    return [term for term in parse_tags(recipe.get("seasonal_terms", "")) if term in SOLAR_TERMS]
+
+
+def _normalize_main_type_filters(values: list[str]) -> list[str]:
+    return list(dict.fromkeys(_LEGACY_MAIN_TYPE_MAP.get(value, value) for value in values if value))
+
+
+def _normalize_sub_type_filters(values: list[str]) -> list[str]:
+    normalized = []
+    for value in values:
+        normalized.extend(_LEGACY_STAPLE_MAP.get(value, {value}))
+    return list(dict.fromkeys(item for item in normalized if item))
+
+
+def _normalize_beverage_filters(values: list[str]) -> list[str]:
+    normalized = []
+    for value in values:
+        normalized.extend(_LEGACY_BEVERAGE_MAP.get(value, {value}))
+    return list(dict.fromkeys(item for item in normalized if item))
+
+
+def _normalize_cuisine_filters(values: list[str]) -> list[str]:
+    normalized = []
+    for value in values:
+        normalized.extend(_LEGACY_CUISINE_MAP.get(value, {value}))
+    return list(dict.fromkeys(item for item in normalized if item))
+
+
+def _get_recipe_cuisine_label(recipe: dict) -> str:
+    return recipe.get("regional_cuisine") or classify_regional_cuisine(recipe)
+
+
 def get_recipe_search_tags(recipe: dict) -> list[str]:
-    beverage_category = recipe.get("beverage_category") or classify_beverage_category(recipe)
-    extra_tags = [beverage_category] if beverage_category else []
+    extra_tags = []
+    regional_cuisine = _get_recipe_cuisine_label(recipe)
+    if regional_cuisine:
+        extra_tags.append(regional_cuisine)
+    extra_tags.extend(get_recipe_seasonal_terms(recipe))
     return list(
         dict.fromkeys(
             get_recipe_feature_tags(recipe)
@@ -98,34 +190,29 @@ def _count_tag_overlap(recipe_tags: list[str], target_tags: list[str]) -> int:
 
 def get_recipe_time_slots(recipe: dict) -> list[str]:
     scene_tags = set(parse_tags(recipe.get("scene_tags", "")))
-    feature_tags = set(parse_tags(recipe.get("feature_tags", "")))
 
     slots = []
-    if {"早餐", "早上"}.intersection(scene_tags) or "早午餐" in feature_tags:
+    if "早餐" in scene_tags:
         slots.append("早餐")
-    if "夏日午餐" in scene_tags or "早午餐" in feature_tags:
+    if "健身准备餐" in scene_tags:
         slots.append("午餐")
-    if {"下午茶", "夏日午后"}.intersection(scene_tags) or {"下午茶", "茶点", "咖啡搭子"}.intersection(feature_tags):
+    if "下午茶" in scene_tags:
         slots.append("下午茶")
-    if {"双人晚餐", "家庭晚餐", "朋友聚餐", "冬日夜晚"}.intersection(scene_tags) or {"家庭", "聚餐", "正餐", "热食"}.intersection(feature_tags):
+    if {"双人晚餐", "朋友聚餐"}.intersection(scene_tags):
         slots.append("晚餐")
-    if "深夜加餐" in scene_tags or "夜宵" in feature_tags:
+    if "夜宵" in scene_tags:
         slots.append("夜宵")
     return list(dict.fromkeys(slots))
 
 
 def get_scene_time_slot(scene: str) -> str:
     mapping = {
-        "早上": "早餐",
         "早餐": "早餐",
-        "夏日午餐": "午餐",
+        "健身准备餐": "午餐",
         "下午茶": "下午茶",
-        "夏日午后": "下午茶",
         "双人晚餐": "晚餐",
-        "家庭晚餐": "晚餐",
         "朋友聚餐": "晚餐",
-        "冬日夜晚": "晚餐",
-        "深夜加餐": "夜宵",
+        "夜宵": "夜宵",
     }
     return mapping.get(scene, "")
 
@@ -172,9 +259,9 @@ def build_user_profile(user_id: int) -> dict:
         for flavor in get_recipe_profile_tags(recipe):
             flavor_scores[flavor] = flavor_scores.get(flavor, 0) + weight
 
-        cuisine_group = recipe.get("cuisine_group")
-        if cuisine_group:
-            cuisine_scores[cuisine_group] = cuisine_scores.get(cuisine_group, 0) + weight * 0.95
+        regional_cuisine = _get_recipe_cuisine_label(recipe)
+        if regional_cuisine:
+            cuisine_scores[regional_cuisine] = cuisine_scores.get(regional_cuisine, 0) + weight * 0.95
 
         for slot in get_recipe_time_slots(recipe):
             time_slot_scores[slot] = time_slot_scores.get(slot, 0) + weight * 0.85
@@ -184,7 +271,7 @@ def build_user_profile(user_id: int) -> dict:
         for flavor in parse_tags(signal.get("flavor_tags", "")):
             flavor_scores[flavor] = flavor_scores.get(flavor, 0) + 1.8 * recency_factor
             signal_count += 0.2
-        for cuisine_group in parse_tags(signal.get("cuisine_groups", "")):
+        for cuisine_group in _normalize_cuisine_filters(parse_tags(signal.get("cuisine_groups", ""))):
             cuisine_scores[cuisine_group] = cuisine_scores.get(cuisine_group, 0) + 1.65 * recency_factor
             signal_count += 0.2
         slot = get_scene_time_slot(signal.get("scene", ""))
@@ -254,10 +341,10 @@ def _profile_bonus(recipe: dict, request: dict, profile: dict | None) -> tuple[f
         bonus += flavor_bonus
         reasons.append(f"也贴近你最近常选的 {', '.join(matched_flavors[:2])}")
 
-    cuisine_group = recipe.get("cuisine_group")
-    if cuisine_group in cuisine_weights:
-        bonus += min(cuisine_weights[cuisine_group], 12) * 0.75 * scale
-        reasons.append(f"菜系上靠近你最近偏爱的 {cuisine_group}")
+    regional_cuisine = _get_recipe_cuisine_label(recipe)
+    if regional_cuisine in cuisine_weights:
+        bonus += min(cuisine_weights[regional_cuisine], 12) * 0.75 * scale
+        reasons.append(f"菜系上靠近你最近偏爱的 {regional_cuisine}")
 
     recipe_slots = get_recipe_time_slots(recipe)
     matched_slots = [slot for slot in recipe_slots if slot in time_weights]
@@ -273,11 +360,11 @@ def matches_primary_bucket(recipe: dict, primary_bucket: str) -> bool:
     main_type = recipe.get("main_type") or classify_main_type(recipe)
     mapping = {
         "drink": {"饮品"},
-        "dessert": {"甜品点心"},
-        "main": {"正餐主食", "家常菜肴", "汤锅粥羹"},
-        "staple": {"正餐主食"},
-        "dish": {"家常菜肴"},
-        "soup_hotpot": {"汤锅粥羹"},
+        "dessert": {"甜品"},
+        "main": {"正餐"},
+        "staple": {"正餐"},
+        "dish": {"正餐"},
+        "soup_hotpot": {"正餐"},
         "light_meal": {"轻食早午餐"},
     }
     target_main_types = mapping.get(primary_bucket, set())
@@ -305,26 +392,29 @@ def infer_course_types(recipe: dict) -> list[str]:
     main_type = recipe.get("main_type") or classify_main_type(recipe)
 
     course_types = []
-    dessert_keywords = ["蛋糕", "布丁", "甜品", "派", "司康", "奶冻", "千层", "甘露", "盒子", "糯米饭"]
+    dessert_keywords = ["蛋糕", "布丁", "甜品", "派", "司康", "奶冻", "千层", "甘露", "盒子"]
     drink_keywords = ["咖啡", "奶茶", "果汁", "茶"]
     light_keywords = ["沙拉", "藜麦", "吐司", "酸奶杯"]
     savory_keywords = ["饭", "面", "锅", "汤", "豆腐", "牛肉", "鸡翅", "乌冬"]
+    savory_dessert_exceptions = ["辣炒年糕", "炒年糕", "年糕炒", "萝卜糕", "糯米饭"]
 
-    if main_type == "甜品点心" or staple_category == "甜品" or "下午茶" in scene_tags or "甜品" in cuisine or "烘焙" in cuisine or any(
+    if main_type == "甜品" or staple_category in {"蛋糕类", "布丁冻品类", "中式甜品类", "冰品类", "烘焙点心类"} or "下午茶" in scene_tags or "甜品" in cuisine or "烘焙" in cuisine or (
+        any(keyword in name for keyword in dessert_keywords) and not any(keyword in name for keyword in savory_dessert_exceptions)
+    ) or any(
         keyword in name for keyword in dessert_keywords
-    ):
+    ) and not any(keyword in name for keyword in savory_dessert_exceptions):
         course_types.append("dessert")
-    if main_type == "饮品" or staple_category == "饮品" or any(keyword in name for keyword in drink_keywords):
+    if main_type == "饮品" or staple_category in {"咖啡类", "茶饮类", "奶茶类", "果饮类", "气泡饮类", "奶昔类", "热饮类"} or any(keyword in name for keyword in drink_keywords):
         course_types.append("drink")
-    if main_type == "轻食早午餐" or staple_category == "轻食" or any(keyword in name for keyword in light_keywords):
+    if main_type == "轻食早午餐" or staple_category in {"沙拉碗类", "三明治贝果类", "吐司卷饼类", "早餐碗类", "轻主食类"} or any(keyword in name for keyword in light_keywords):
         course_types.append("light_meal")
-    if main_type in {"正餐主食", "家常菜肴", "汤锅粥羹"} or staple_category in {"饭类", "面类", "粉类", "饼类", "锅物", "汤粥", "面包三明治", "菜肴"} or any(
+    if main_type == "正餐" or staple_category in {"饭类", "面类", "粉类", "饼类", "锅汤类", "菜肴类"} or any(
         keyword in name for keyword in savory_keywords
-    ) or "下饭解馋" in parse_tags(recipe.get("diet_tags", "")):
+    ) or "下饭" in get_recipe_feature_tags(recipe):
         course_types.extend(["main", "savory"])
-    if "甜香" in flavor_tags or "奶香" in flavor_tags or "果香" in flavor_tags:
+    if "奶香" in flavor_tags or "酸甜" in flavor_tags:
         course_types.append("sweet")
-    if "香辣" in flavor_tags or "鲜香" in flavor_tags or "家常" in flavor_tags or "咸香" in flavor_tags:
+    if {"香辣", "麻辣", "鲜香", "蒜香", "酱香", "重口"}.intersection(flavor_tags):
         course_types.append("savory")
 
     if not course_types:
@@ -408,6 +498,7 @@ def _score_recipe(recipe: dict, request: dict, favorite_counts: dict, skip_count
     recipe_diets = parse_tags(recipe["diet_tags"])
     course_types = infer_course_types(recipe)
     feature_tags = get_recipe_feature_tags(recipe)
+    recipe_seasonal_terms = get_recipe_seasonal_terms(recipe)
     search_tags = get_recipe_search_tags(recipe)
     solar_terms = request.get("solar_terms", [])
 
@@ -457,7 +548,7 @@ def _score_recipe(recipe: dict, request: dict, favorite_counts: dict, skip_count
             reasons.append(f"标签上匹配到 {' / '.join(overlap_tags[:3])}")
 
     if solar_terms:
-        term_overlap = [tag for tag in solar_terms if tag in feature_tags]
+        term_overlap = [tag for tag in solar_terms if tag in recipe_seasonal_terms]
         if term_overlap:
             score += 34
             reasons.append(f"正好对应 {term_overlap[0]} 这段时令和习俗")
@@ -571,19 +662,18 @@ def recommend_recipes(
     intent_tags = request.get("intent_tags", [])
     mood_search_tags = request.get("mood_search_tags", [])
     primary_bucket = request.get("primary_bucket")
-    main_types = request.get("main_types", [])
-    staple_categories = request.get("staple_categories", [])
-    beverage_categories = request.get("beverage_categories", [])
+    main_types = _normalize_main_type_filters(request.get("main_types", []))
+    staple_categories = _normalize_sub_type_filters(request.get("staple_categories", []))
+    beverage_categories = _normalize_beverage_filters(request.get("beverage_categories", []))
     solar_terms = request.get("solar_terms", [])
-    cuisine_groups = request.get("cuisine_groups", [])
+    cuisine_groups = _normalize_cuisine_filters(request.get("cuisine_groups", []))
     required_flavors = request.get("required_flavors", [])
     current_input_flavors = request.get("current_input_flavors", [])
 
+    # Recompute taxonomy fields at recommendation time so stale stored labels
+    # do not leak desserts into drinks or similar cross-bucket results.
+    recipes = recipes.apply(lambda row: pd.Series(add_compatibility_fields(row.to_dict())), axis=1)
     recipes["course_types"] = recipes.apply(lambda row: infer_course_types(row.to_dict()), axis=1)
-    if "main_type" not in recipes.columns:
-        recipes["main_type"] = recipes.apply(lambda row: classify_main_type(row.to_dict()), axis=1)
-    if "beverage_category" not in recipes.columns:
-        recipes["beverage_category"] = recipes.apply(lambda row: classify_beverage_category(row.to_dict()), axis=1)
 
     if main_types:
         main_type_filtered = recipes[recipes["main_type"].isin(main_types)]
@@ -608,7 +698,7 @@ def recommend_recipes(
             recipes = drink_filtered.copy()
 
     if cuisine_groups:
-        cuisine_filtered = recipes[recipes["cuisine_group"].isin(cuisine_groups)]
+        cuisine_filtered = recipes[recipes["regional_cuisine"].isin(cuisine_groups)]
         if not cuisine_filtered.empty:
             recipes = cuisine_filtered.copy()
 
@@ -638,9 +728,11 @@ def recommend_recipes(
             recipes = flavor_filtered.copy()
 
     if solar_terms:
-        recipes["feature_tags_list"] = recipes.apply(lambda row: get_recipe_feature_tags(row.to_dict()), axis=1)
+        recipes["seasonal_terms_list"] = recipes.apply(lambda row: get_recipe_seasonal_terms(row.to_dict()), axis=1)
         seasonal_filtered = recipes[
-            recipes["feature_tags_list"].apply(lambda tags: any(solar_term in tags for solar_term in solar_terms))
+            recipes["seasonal_terms_list"].apply(
+                lambda tags: any(solar_term in tags for solar_term in solar_terms)
+            )
         ]
         if not seasonal_filtered.empty:
             recipes = seasonal_filtered.copy()

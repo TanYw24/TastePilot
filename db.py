@@ -24,15 +24,14 @@ DEFAULT_PG_DSN = "postgresql://localhost:5432/tastepilot"
 RECIPE_COLUMNS = [
     "id",
     "name",
-    "cuisine",
+    "food_origin",
+    "regional_cuisine",
     "main_type",
-    "staple_category",
-    "cuisine_group",
-    "beverage_category",
+    "sub_type",
     "flavor_tags",
     "scene_tags",
-    "diet_tags",
     "feature_tags",
+    "seasonal_terms",
     "budget_level",
     "cook_time_minutes",
     "difficulty",
@@ -291,15 +290,14 @@ def init_postgres_db() -> None:
             CREATE TABLE IF NOT EXISTS recipes (
                 id BIGINT PRIMARY KEY,
                 name TEXT NOT NULL,
-                cuisine TEXT NOT NULL,
+                food_origin TEXT,
+                regional_cuisine TEXT,
                 main_type TEXT,
-                staple_category TEXT,
-                cuisine_group TEXT,
-                beverage_category TEXT,
+                sub_type TEXT,
                 flavor_tags TEXT,
                 scene_tags TEXT,
-                diet_tags TEXT,
                 feature_tags TEXT,
+                seasonal_terms TEXT,
                 budget_level TEXT,
                 cook_time_minutes INTEGER NOT NULL,
                 difficulty TEXT,
@@ -326,10 +324,14 @@ def init_postgres_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_profile_feedback_user_id ON profile_feedback(user_id)
             """
         )
+        connection.execute("ALTER TABLE recipes ADD COLUMN IF NOT EXISTS food_origin TEXT")
+        connection.execute("ALTER TABLE recipes ADD COLUMN IF NOT EXISTS regional_cuisine TEXT")
         connection.execute("ALTER TABLE recipes ADD COLUMN IF NOT EXISTS main_type TEXT")
+        connection.execute("ALTER TABLE recipes ADD COLUMN IF NOT EXISTS sub_type TEXT")
+        connection.execute("ALTER TABLE recipes ADD COLUMN IF NOT EXISTS seasonal_terms TEXT")
         connection.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_recipes_cuisine_group ON recipes(cuisine_group)
+            CREATE INDEX IF NOT EXISTS idx_recipes_regional_cuisine ON recipes(regional_cuisine)
             """
         )
         connection.execute(
@@ -941,19 +943,17 @@ def get_preference_summary(preferences: dict) -> list[str]:
 
 
 def _normalize_recipe_row(row: dict[str, Any]) -> dict[str, Any]:
-    from recipe_taxonomy import classify_main_type
+    from recipe_taxonomy import add_compatibility_fields
 
-    normalized = {}
-    for column in RECIPE_COLUMNS:
-        value = row.get(column)
+    normalized = dict(row)
+    for column in set(RECIPE_COLUMNS) | {"id", "cook_time_minutes", "is_spicy", "is_vegetarian"}:
+        value = normalized.get(column)
         if value != value:  # NaN
             value = None
         if column in {"id", "cook_time_minutes", "is_spicy", "is_vegetarian"} and value is not None:
             value = int(value)
         normalized[column] = value
-    if not normalized.get("main_type"):
-        normalized["main_type"] = classify_main_type(normalized)
-    return normalized
+    return add_compatibility_fields(normalized)
 
 
 def get_recipes_from_sqlite() -> list[dict[str, Any]]:
@@ -1010,24 +1010,23 @@ def import_recipes_csv_to_postgres() -> int:
             connection.execute(
                 """
                 INSERT INTO recipes (
-                    id, name, cuisine, main_type, staple_category, cuisine_group, beverage_category,
-                    flavor_tags, scene_tags, diet_tags, feature_tags, budget_level,
+                    id, name, food_origin, regional_cuisine, main_type, sub_type,
+                    flavor_tags, scene_tags, feature_tags, seasonal_terms, budget_level,
                     cook_time_minutes, difficulty, ingredients, is_spicy, is_vegetarian,
                     calorie_level, description
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
                 ON CONFLICT (id) DO UPDATE SET
                     name = EXCLUDED.name,
-                    cuisine = EXCLUDED.cuisine,
+                    food_origin = EXCLUDED.food_origin,
+                    regional_cuisine = EXCLUDED.regional_cuisine,
                     main_type = EXCLUDED.main_type,
-                    staple_category = EXCLUDED.staple_category,
-                    cuisine_group = EXCLUDED.cuisine_group,
-                    beverage_category = EXCLUDED.beverage_category,
+                    sub_type = EXCLUDED.sub_type,
                     flavor_tags = EXCLUDED.flavor_tags,
                     scene_tags = EXCLUDED.scene_tags,
-                    diet_tags = EXCLUDED.diet_tags,
                     feature_tags = EXCLUDED.feature_tags,
+                    seasonal_terms = EXCLUDED.seasonal_terms,
                     budget_level = EXCLUDED.budget_level,
                     cook_time_minutes = EXCLUDED.cook_time_minutes,
                     difficulty = EXCLUDED.difficulty,
