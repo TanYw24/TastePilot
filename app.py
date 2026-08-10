@@ -93,6 +93,14 @@ def format_hero_date_label(now: datetime | None = None) -> str:
 st.markdown(
     """
     <style>
+    :root,
+    html,
+    body,
+    .stApp,
+    [data-testid="stAppViewContainer"],
+    [data-testid="stAppViewContainer"] * {
+        color-scheme: light !important;
+    }
     .stApp {
         background-image:
             linear-gradient(rgba(255, 252, 248, 0.78), rgba(255, 248, 241, 0.82)),
@@ -1382,6 +1390,16 @@ st.markdown(
     }
     .stTextArea textarea::placeholder {
         color: rgba(137, 84, 61, 0.62) !important;
+    }
+    input,
+    textarea,
+    select,
+    option,
+    button,
+    [data-baseweb="input"],
+    [data-baseweb="select"],
+    [data-baseweb="popover"] {
+        color-scheme: light !important;
     }
     .stButton > button {
         min-height: 2.95rem;
@@ -2841,42 +2859,18 @@ def render_auth_screen() -> None:
             font-weight: 600;
         }
         div[data-testid="stForm"] [data-baseweb="input"] {
-            background: rgba(35, 36, 46, 0.96);
+            background: rgba(255, 250, 245, 0.96);
             border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(219, 188, 163, 0.62);
+            box-shadow:
+                0 8px 18px rgba(175, 129, 95, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.68);
         }
         div[data-testid="stForm"] input {
-            color: #f7f7fb;
+            color: #2f241d !important;
         }
         div[data-testid="stForm"] input::placeholder {
-            color: rgba(236, 228, 220, 0.62);
-        }
-        @media (prefers-color-scheme: light) {
-            div[data-testid="stForm"] [data-baseweb="input"] {
-                background: rgba(255, 250, 245, 0.96);
-                border: 1px solid rgba(219, 188, 163, 0.62);
-                box-shadow:
-                    0 8px 18px rgba(175, 129, 95, 0.08),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.68);
-            }
-            div[data-testid="stForm"] input {
-                color: #2f241d !important;
-            }
-            div[data-testid="stForm"] input::placeholder {
-                color: rgba(111, 84, 66, 0.58) !important;
-            }
-        }
-        @media (prefers-color-scheme: dark) {
-            div[data-testid="stForm"] [data-baseweb="input"] {
-                background: rgba(35, 36, 46, 0.96);
-                border: 1px solid rgba(255, 255, 255, 0.08);
-            }
-            div[data-testid="stForm"] input {
-                color: #f7f7fb !important;
-            }
-            div[data-testid="stForm"] input::placeholder {
-                color: rgba(236, 228, 220, 0.62) !important;
-            }
+            color: rgba(111, 84, 66, 0.58) !important;
         }
         .password-row-head {
             display: flex;
@@ -2910,23 +2904,16 @@ def render_auth_screen() -> None:
         .auth-inline-link a:hover {
             color: #fff7ee !important;
         }
-        @media (prefers-color-scheme: light) {
-            .password-row-label {
-                color: #3b312a;
-            }
-            .reset-link-note a,
-            .auth-inline-link a {
-                color: rgba(118, 78, 55, 0.82) !important;
-            }
-            .reset-link-note a:hover,
-            .auth-inline-link a:hover {
-                color: #7a4930 !important;
-            }
+        .password-row-label {
+            color: #3b312a;
         }
-        @media (prefers-color-scheme: dark) {
-            .password-row-label {
-                color: #f3eee8;
-            }
+        .reset-link-note a,
+        .auth-inline-link a {
+            color: rgba(118, 78, 55, 0.82) !important;
+        }
+        .reset-link-note a:hover,
+        .auth-inline-link a:hover {
+            color: #7a4930 !important;
         }
         @media (max-width: 900px) {
             .main .block-container {
