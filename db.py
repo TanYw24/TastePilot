@@ -734,6 +734,22 @@ def record_action(user_id: int, recipe_id: int, action_type: str) -> None:
         )
 
 
+def remove_favorite_recipe(user_id: int, recipe_id: int) -> None:
+    if using_postgres():
+        with get_postgres_connection() as connection:
+            connection.execute(
+                "DELETE FROM user_actions WHERE user_id = %s AND recipe_id = %s AND action_type = 'favorite'",
+                (user_id, recipe_id),
+            )
+        return
+
+    with get_sqlite_connection() as connection:
+        connection.execute(
+            "DELETE FROM user_actions WHERE user_id = ? AND recipe_id = ? AND action_type = 'favorite'",
+            (user_id, recipe_id),
+        )
+
+
 def record_query_signal(
     user_id: int,
     flavor_tags: list[str] | None = None,

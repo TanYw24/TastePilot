@@ -135,6 +135,9 @@ def _legacy_sub_type_value(recipe: dict) -> str:
 
 def classify_main_type(recipe: dict) -> str:
     current = _canonicalize_main_type(str(recipe.get("main_type", "")).strip())
+    name = str(recipe.get("name", "")).strip()
+    if current == "饮品" and _contains_any(name, ["茶泡饭", "饭", "粥", "馄饨", "饺", "面", "米线", "米粉", "河粉"]):
+        current = ""
     if current and current != "正餐":
         return current
 
@@ -284,7 +287,7 @@ def classify_sub_type(recipe: dict) -> str:
             return "冰品类"
         if _contains_any(name, ["布丁", "奶冻", "慕斯", "茶冻", "果冻"]):
             return "布丁冻品类"
-        if _contains_any(name, ["汤圆", "酒酿", "银耳", "羹", "糍粑", "糯米", "圆子", "甘露", "西米露", "山药糕", "芝麻糊"]):
+        if _contains_any(name, ["汤圆", "酒酿", "银耳", "羹", "糍粑", "糯米", "圆子", "甘露", "西米露", "山药糕", "芝麻糊", "年糕汤", "花生汤"]):
             return "中式甜品类"
         if _contains_any(name, ["司康", "派", "挞", "玛芬", "曲奇", "泡芙", "麻薯卷", "奶油卷"]):
             return "烘焙点心类"
@@ -450,9 +453,9 @@ def get_recipe_profile_tags(recipe: dict) -> list[str]:
 def build_display_tags(recipe: dict) -> list[str]:
     tags = [
         classify_main_type(recipe),
+        classify_sub_type(recipe),
         classify_food_origin(recipe),
         classify_regional_cuisine(recipe),
-        classify_sub_type(recipe),
     ]
     tags.extend(normalize_seasonal_terms(recipe))
     tags.extend(parse_tags(recipe.get("flavor_tags", "")))

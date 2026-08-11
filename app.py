@@ -27,6 +27,7 @@ from db import (
     get_user_preferences,
     init_db,
     record_action,
+    remove_favorite_recipe,
     reset_password_with_code,
     save_user_preferences,
 )
@@ -44,15 +45,23 @@ ASSET_DIR = Path(__file__).resolve().parent / "assets" / "inspiration"
 LIQIU_CARD_PATH = ASSET_DIR / "liqiu-card.png"
 LICHUN_CARD_PATH = ASSET_DIR / "lichun-card.png"
 YUSHUI_CARD_PATH = ASSET_DIR / "yushui-card.png"
+JINGZHE_CARD_PATH = ASSET_DIR / "jingzhe-card.png"
 CHUNFEN_CARD_PATH = ASSET_DIR / "chunfen-card.png"
+QINGMING_CARD_PATH = ASSET_DIR / "qingming-card.png"
 LIXIA_CARD_PATH = ASSET_DIR / "lixia-card.png"
 XIAOMAN_CARD_PATH = ASSET_DIR / "xiaoman-card.png"
+MANGZHONG_CARD_PATH = ASSET_DIR / "mangzhong-card.png"
 XIAZHI_CARD_PATH = ASSET_DIR / "xiazhi-card.png"
+XIAOSHU_CARD_PATH = ASSET_DIR / "xiaoshu-card.png"
 LIDONG_CARD_PATH = ASSET_DIR / "lidong-card.png"
 CHUSHU_CARD_PATH = ASSET_DIR / "chushu-card.png"
+BAILU_CARD_PATH = ASSET_DIR / "bailu-card.png"
 QIUFEN_CARD_PATH = ASSET_DIR / "qiufen-card.png"
+HANLU_CARD_PATH = ASSET_DIR / "hanlu-card.png"
 XIAOXUE_CARD_PATH = ASSET_DIR / "xiaoxue-card.png"
+DAXUE_CARD_PATH = ASSET_DIR / "daxue-card.png"
 DONGZHI_CARD_PATH = ASSET_DIR / "dongzhi-card.png"
+XIAOHAN_CARD_PATH = ASSET_DIR / "xiaohan-card.png"
 LIQIU_SCENIC_BG_URL = "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1800&q=80"
 LICHUN_CARD_BG_URL = "https://images.unsplash.com/photo-1523978591478-c753949ff840?auto=format&fit=crop&w=1400&q=80"
 LIXIA_CARD_BG_URL = "https://images.unsplash.com/photo-1467453678174-768ec283a940?auto=format&fit=crop&w=1400&q=80"
@@ -111,7 +120,7 @@ st.markdown(
     }
     .stApp {
         background-image:
-            linear-gradient(rgba(255, 252, 248, 0.78), rgba(255, 248, 241, 0.82)),
+            linear-gradient(rgba(255, 252, 248, 0.91), rgba(255, 247, 240, 0.94)),
             url("https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1800&q=80");
         background-size: cover;
         background-position: center;
@@ -1149,7 +1158,9 @@ st.markdown(
     .st-key-prompt_actions {
         margin-top: -4.1rem !important;
         position: relative;
-        z-index: 2;
+        z-index: 10;
+        pointer-events: auto !important;
+        isolation: isolate;
     }
     .followup-shell {
         margin-top: 1rem;
@@ -1306,6 +1317,42 @@ st.markdown(
         color: #7a311f;
         margin-bottom: 0.35rem;
     }
+    .recipe-tag-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 0.42rem;
+        margin: 0.18rem 0 0.8rem 0;
+    }
+    .recipe-tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        align-items: center;
+    }
+    .recipe-tag-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.26rem 0.76rem;
+        border-radius: 999px;
+        border: 1px solid rgba(189, 122, 81, 0.18);
+        font-size: 0.86rem;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+    .recipe-tag-chip-primary {
+        background: rgba(255, 241, 225, 0.9);
+        color: #9f552d;
+    }
+    .recipe-tag-chip-secondary {
+        background: rgba(255, 241, 225, 0.48);
+        color: #ac643a;
+    }
+    .recipe-tag-inline {
+        color: rgba(116, 74, 52, 0.52);
+        font-size: 0.82rem;
+        line-height: 1.45;
+        letter-spacing: 0.01em;
+    }
     .recipe-card p,
     .recipe-card strong {
         color: #6a4330;
@@ -1313,10 +1360,39 @@ st.markdown(
     .recipe-card p {
         line-height: 1.72;
     }
+    .recipe-card .recipe-description {
+        color: rgba(106, 67, 48, 0.62) !important;
+    }
     .metric-line {
         color: #744a34;
         margin: 0.2rem 0 0.4rem 0;
         font-weight: 600;
+    }
+    [class*="st-key-recipe_actions_"] [data-testid="stHorizontalBlock"] {
+        flex-wrap: nowrap !important;
+        gap: 0.75rem !important;
+    }
+    @media (max-width: 700px) {
+        [class*="st-key-recipe_actions_"] [data-testid="stHorizontalBlock"] {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            gap: 0.42rem !important;
+        }
+        [class*="st-key-recipe_actions_"] [data-testid="stColumn"] {
+            width: 0 !important;
+            min-width: 0 !important;
+            flex: 1 1 0 !important;
+        }
+        [class*="st-key-recipe_actions_"] [data-testid="stButton"] > button {
+            min-height: 2.75rem !important;
+            padding: 0.3rem 0.32rem !important;
+        }
+        [class*="st-key-recipe_actions_"] [data-testid="stButton"] > button p {
+            font-size: 0.76rem !important;
+            line-height: 1.2 !important;
+            white-space: nowrap !important;
+        }
     }
     .prompt-card {
         padding: 1.35rem;
@@ -2018,6 +2094,25 @@ SEASONAL_PAGE_CONFIG = {
         "main_types": ["正餐", "轻食早午餐"],
         "scene_note": "更适合早春水汽渐起时，那种想吃得清润、鲜嫩又带一点暖意的胃口。",
     },
+    "惊蛰": {
+        "start_md": (3, 5),
+        "title": "惊蛰时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": JINGZHE_CARD_PATH,
+        "background_position": "center 66%",
+        "page_background_url": LICHUN_SCENIC_BG_URL,
+        "card_subtitle": "惊蛰更适合从清润、鲜活、带一点辛香的味道开始想。雪梨百合、春笋和嫩芽，把仲春刚醒来的胃口慢慢打开。",
+        "intro": "惊蛰之后，春意开始真正活动起来，风燥也渐渐明显。我们从雪梨、百合、春笋和嫩芽里，挑一批清润鲜活、不过分厚重的菜。",
+        "seasonal_tags": ["惊蛰", "春季时令", "仲春清润"],
+        "display_tags": ["清润", "鲜活", "雪梨", "百合", "春笋"],
+        "display_tag_groups": {
+            "时令食材": ["雪梨", "百合", "春笋"],
+            "适合口感": ["清润", "鲜活"],
+        },
+        "card_tags": ["雪梨百合", "春笋", "嫩芽", "清润甜羹"],
+        "main_types": ["正餐", "轻食早午餐", "甜品", "饮品"],
+        "scene_note": "更适合春雷初动、万物渐醒时，那种想吃得清润、鲜活又有一点暖意的胃口。",
+    },
     "春分": {
         "start_md": (3, 20),
         "title": "春分时令推荐",
@@ -2035,6 +2130,24 @@ SEASONAL_PAGE_CONFIG = {
         "card_tags": ["香椿", "春笋", "豆苗", "春日煎蛋"],
         "main_types": ["正餐", "轻食早午餐"],
         "scene_note": "更适合昼夜渐暖、春菜正鲜时，那种想吃得平衡又轻快的胃口。",
+    },
+    "清明": {
+        "start_md": (4, 4),
+        "title": "清明时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": QINGMING_CARD_PATH,
+        "page_background_url": LICHUN_SCENIC_BG_URL,
+        "card_subtitle": "清明更适合从草木清香、软糯与春鲜里找灵感。艾草青团、春笋和马兰头，把暮春刚好的青绿味道端上桌。",
+        "intro": "清明前后，艾草、春笋和田野嫩蔬正鲜。我们从青团、马兰头、春笋和青梅里，挑一批带草木香、清鲜又不失软糯的暮春味道。",
+        "seasonal_tags": ["清明", "春季时令", "暮春尝青"],
+        "display_tags": ["草木香", "软糯", "艾草", "春笋", "青梅"],
+        "display_tag_groups": {
+            "时令食材": ["艾草", "春笋", "青梅"],
+            "适合口感": ["清鲜", "软糯"],
+        },
+        "card_tags": ["艾草青团", "春笋", "马兰头", "青梅米饮"],
+        "main_types": ["正餐主食", "正餐菜品", "甜品", "饮品"],
+        "scene_note": "更适合暮春草木正青时，那种想吃得清鲜、软糯又带一点新绿香气的胃口。",
     },
     "立夏": {
         "start_md": (5, 5),
@@ -2072,6 +2185,24 @@ SEASONAL_PAGE_CONFIG = {
         "main_types": ["正餐", "轻食早午餐", "饮品"],
         "scene_note": "更适合初夏渐热但尚未酷暑时，那种想吃得清爽、微苦又有回甘的胃口。",
     },
+    "芒种": {
+        "start_md": (6, 5),
+        "title": "芒种时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": MANGZHONG_CARD_PATH,
+        "page_background_url": LIXIA_SCENIC_BG_URL,
+        "card_subtitle": "芒种更适合从酸香、开胃、利落的味道开始想。青梅、仔姜、麦仁和一盘梅香鸡，把忙热交织的初夏吃得更轻快。",
+        "intro": "芒种之后，麦香与梅子的酸味都到了更鲜明的时候。我们从青梅、仔姜、麦仁和清爽时蔬里，挑一批开胃又有饱足感的菜。",
+        "seasonal_tags": ["芒种", "夏季时令", "煮梅食新"],
+        "display_tags": ["酸香", "开胃", "青梅", "仔姜", "麦仁"],
+        "display_tag_groups": {
+            "时令食材": ["青梅", "仔姜", "麦仁"],
+            "适合口感": ["酸香", "开胃"],
+        },
+        "card_tags": ["青梅仔姜鸡", "麦仁", "黄瓜", "梅香轻食"],
+        "main_types": ["正餐", "轻食早午餐", "甜品", "饮品"],
+        "scene_note": "更适合农忙与暑气一起渐起时，那种想吃得酸香、开胃又不拖沓的节奏。",
+    },
     "夏至": {
         "start_md": (6, 21),
         "title": "夏至时令推荐",
@@ -2089,6 +2220,24 @@ SEASONAL_PAGE_CONFIG = {
         "card_tags": ["麻酱凉面", "黄瓜", "绿豆", "冬瓜"],
         "main_types": ["正餐", "饮品"],
         "scene_note": "更适合白昼最长、暑气渐盛时，那种想吃得清凉又有饱足感的节奏。",
+    },
+    "小暑": {
+        "start_md": (7, 7),
+        "title": "小暑时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": XIAOSHU_CARD_PATH,
+        "page_background_url": LIXIA_SCENIC_BG_URL,
+        "card_subtitle": "小暑更适合从清凉、淡甜和有水汽的味道开始想。绿豆莲子、冬瓜与薄荷，把刚起势的暑热吃得轻快一点。",
+        "intro": "小暑之后，热意开始变得明确，胃口也更偏向清淡和消暑。我们从绿豆、莲子、冬瓜和薄荷里，挑一批清凉爽口又不过分冰冷的味道。",
+        "seasonal_tags": ["小暑", "夏季时令", "初暑清凉"],
+        "display_tags": ["清凉", "淡甜", "绿豆", "莲子", "冬瓜"],
+        "display_tag_groups": {
+            "时令食材": ["绿豆", "莲子", "冬瓜"],
+            "适合口感": ["清凉", "爽口"],
+        },
+        "card_tags": ["绿豆莲子羹", "冬瓜", "荷叶", "薄荷饮"],
+        "main_types": ["正餐主食", "正餐菜品", "甜品", "饮品"],
+        "scene_note": "更适合暑气刚起、身体还在适应热意时，那种想吃得清凉、轻盈又有一点甜润的胃口。",
     },
     "立秋": {
         "start_md": (8, 7),
@@ -2126,6 +2275,24 @@ SEASONAL_PAGE_CONFIG = {
         "main_types": ["正餐", "甜品", "饮品"],
         "scene_note": "更适合暑气渐退、早晚转凉时，那种想吃得温和、清补又不油腻的胃口。",
     },
+    "白露": {
+        "start_md": (9, 7),
+        "title": "白露时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": BAILU_CARD_PATH,
+        "page_background_url": LIQIU_SCENIC_BG_URL,
+        "card_subtitle": "白露更适合从清甜、温润、不过分燥的味道开始想。龙眼银耳、秋梨和一杯淡茶，把初秋的凉意接得更柔和。",
+        "intro": "白露之后，清晨与夜晚的凉意更明显，饮食也适合慢慢转向温润。我们从龙眼、银耳、秋梨和莲子里，挑一批清甜不腻的秋日味道。",
+        "seasonal_tags": ["白露", "秋季时令", "温润润燥"],
+        "display_tags": ["温润", "清甜", "龙眼", "银耳", "秋梨"],
+        "display_tag_groups": {
+            "时令食材": ["龙眼", "银耳", "秋梨"],
+            "适合口感": ["温润", "清甜"],
+        },
+        "card_tags": ["龙眼银耳", "秋梨", "莲子", "白露茶"],
+        "main_types": ["正餐", "甜品", "饮品"],
+        "scene_note": "更适合早晚凉意渐浓时，那种想吃得温润、清甜又不显厚重的胃口。",
+    },
     "秋分": {
         "start_md": (9, 22),
         "title": "秋分时令推荐",
@@ -2143,6 +2310,24 @@ SEASONAL_PAGE_CONFIG = {
         "card_tags": ["秋梨", "莲藕", "板栗", "桂花甜汤"],
         "main_types": ["正餐", "甜品", "饮品"],
         "scene_note": "更适合凉意渐稳、秋味正盛时，那种想吃得温润又不厚重的胃口。",
+    },
+    "寒露": {
+        "start_md": (10, 8),
+        "title": "寒露时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": HANLU_CARD_PATH,
+        "page_background_url": LIQIU_SCENIC_BG_URL,
+        "card_subtitle": "寒露更适合从温润、坚果香和热汤里找灵感。板栗山药鸡汤、黑芝麻与菊花茶，把深秋的凉意接得稳稳的。",
+        "intro": "寒露之后，空气更凉也更干，饮食适合往温润与滋养转。我们从板栗、山药、黑芝麻和菊花里，挑一批香而不腻、暖而不燥的深秋味道。",
+        "seasonal_tags": ["寒露", "秋季时令", "深秋温润"],
+        "display_tags": ["温润", "坚果香", "板栗", "山药", "黑芝麻"],
+        "display_tag_groups": {
+            "时令食材": ["板栗", "山药", "黑芝麻"],
+            "适合口感": ["温润", "醇香"],
+        },
+        "card_tags": ["板栗山药鸡汤", "黑芝麻", "菊花茶", "莲藕煲"],
+        "main_types": ["正餐主食", "正餐菜品", "甜品", "饮品"],
+        "scene_note": "更适合深秋凉意变清晰时，那种想吃得温润、醇香又不过分厚重的胃口。",
     },
     "立冬": {
         "start_md": (11, 7),
@@ -2180,6 +2365,24 @@ SEASONAL_PAGE_CONFIG = {
         "main_types": ["正餐", "甜品"],
         "scene_note": "更适合初冬寒意渐起时，那种想吃软糯、热乎、能慢慢暖起来的胃口。",
     },
+    "大雪": {
+        "start_md": (12, 7),
+        "title": "大雪时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": DAXUE_CARD_PATH,
+        "page_background_url": LIDONG_SCENIC_BG_URL,
+        "card_subtitle": "大雪更适合从热汤、根茎和温补的味道开始想。当归萝卜羊肉汤、白菜与板栗，让深冬的一餐更踏实。",
+        "intro": "大雪之后，寒意进入更深的一段，饮食也适合往热乎和温补走。我们从羊肉、白萝卜、白菜和板栗里，挑一批扎实却不过分油腻的冬日菜。",
+        "seasonal_tags": ["大雪", "冬季时令", "深冬温补"],
+        "display_tags": ["温补", "热汤", "羊肉", "白萝卜", "白菜"],
+        "display_tag_groups": {
+            "时令食材": ["羊肉", "白萝卜", "白菜"],
+            "适合口感": ["温补", "热汤"],
+        },
+        "card_tags": ["当归羊肉汤", "白萝卜", "白菜", "板栗"],
+        "main_types": ["正餐", "甜品"],
+        "scene_note": "更适合寒意渐深、身体想要热量时，那种想吃热乎、温补又踏实的胃口。",
+    },
     "冬至": {
         "start_md": (12, 21),
         "title": "冬至时令推荐",
@@ -2197,6 +2400,24 @@ SEASONAL_PAGE_CONFIG = {
         "card_tags": ["三鲜饺子", "黑芝麻汤圆", "热汤", "围桌暖食"],
         "main_types": ["正餐", "甜品"],
         "scene_note": "更适合一年里夜晚最长的时候，和家人朋友围桌吃一顿热乎的。",
+    },
+    "小寒": {
+        "start_md": (1, 5),
+        "title": "小寒时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": XIAOHAN_CARD_PATH,
+        "page_background_url": LIDONG_SCENIC_BG_URL,
+        "card_subtitle": "小寒更适合从杂粮粥、根茎和热炖里找灵感。腊八粥、牛肉萝卜锅与姜枣茶，让一年最冷的一段慢慢暖起来。",
+        "intro": "小寒之后，寒意进入一年里最明显的一段，饮食也适合更扎实温暖。我们从杂粮、红枣、山药和白萝卜里，挑一批热乎、有饱足感又不显油重的味道。",
+        "seasonal_tags": ["小寒", "冬季时令", "隆冬暖食"],
+        "display_tags": ["热乎", "暖胃", "杂粮", "山药", "白萝卜"],
+        "display_tag_groups": {
+            "时令食材": ["杂粮", "山药", "白萝卜"],
+            "适合口感": ["热乎", "暖胃"],
+        },
+        "card_tags": ["腊八粥", "牛肉萝卜锅", "山药", "姜枣茶"],
+        "main_types": ["正餐主食", "正餐菜品", "甜品", "饮品"],
+        "scene_note": "更适合隆冬寒意正深时，那种想吃得热乎、扎实又能慢慢暖起来的胃口。",
     },
 }
 
@@ -2584,6 +2805,36 @@ def send_reset_code(email: str) -> None:
 def render_tag_pills(tags: list[str]) -> str:
     unique_tags = list(dict.fromkeys(tag for tag in tags if tag))
     return "".join(f'<span class="skill-chip">{tag}</span>' for tag in unique_tags)
+
+
+def render_recipe_card_tags(recipe: dict) -> str:
+    def _unique(items: list[str]) -> list[str]:
+        return list(dict.fromkeys(item for item in items if item))
+
+    primary_tags = _unique([
+        recipe.get("main_type", ""),
+        recipe.get("sub_type", ""),
+    ])
+    secondary_tags = _unique([
+        recipe.get("food_origin", ""),
+        recipe.get("regional_cuisine", ""),
+    ])
+    tertiary_tags = _unique(
+        str(recipe.get("flavor_tags", "")).split("|")
+        + str(recipe.get("scene_tags", "")).split("|")
+    )
+
+    first_row = "".join(f'<span class="recipe-tag-chip recipe-tag-chip-primary">{tag}</span>' for tag in primary_tags)
+    first_row += "".join(f'<span class="recipe-tag-chip recipe-tag-chip-secondary">{tag}</span>' for tag in secondary_tags)
+    second_row = " / ".join(tertiary_tags)
+
+    parts = ['<div class="recipe-tag-stack">']
+    if first_row:
+        parts.append(f'<div class="recipe-tag-row">{first_row}</div>')
+    if second_row:
+        parts.append(f'<div class="recipe-tag-inline">{second_row}</div>')
+    parts.append("</div>")
+    return "".join(parts)
 
 
 def render_seasonal_tag_groups(tag_groups: dict[str, list[str]] | None, fallback_tags: list[str]) -> str:
@@ -4011,8 +4262,9 @@ def render_seasonal_inspiration_card() -> None:
     term_name = get_current_seasonal_term_name()
     config = SEASONAL_PAGE_CONFIG.get(term_name, SEASONAL_PAGE_CONFIG[get_current_seasonal_term_name()])
     background_image = resolve_image_source(config["image_path"])
+    background_position = config.get("background_position", "center")
     background_style = (
-        f"background-image: linear-gradient(180deg, rgba(255, 248, 239, 0.08), rgba(84, 54, 35, 0.14)), url('{background_image}');"
+        f"background-image: linear-gradient(180deg, rgba(255, 248, 239, 0.08), rgba(84, 54, 35, 0.14)), url('{background_image}'); background-position: {background_position};"
         if background_image
         else "background: linear-gradient(135deg, rgba(253, 239, 213, 0.96), rgba(201, 153, 104, 0.78));"
     )
@@ -4112,33 +4364,42 @@ def render_recommendation_cards(
     if not recommendations:
         return
 
+    user_id = st.session_state.user["id"]
+    favorite_recipe_ids = set(get_favorite_recipes(user_id))
     st.markdown(f'<div class="followup-title">{title}</div>', unsafe_allow_html=True)
     for recipe in recommendations:
+        is_favorite = recipe["id"] in favorite_recipe_ids
         st.markdown(
             f"""
             <div class="recipe-card">
                 <div class="recipe-title">{recipe['name']}</div>
-                <div>{render_tag_pills(recipe['display_tags'])}</div>
-                <p><strong>为什么推荐你：</strong>{recipe['reason']}</p>
+                <div>{render_recipe_card_tags(recipe)}</div>
+                <p><strong>推荐理由：</strong>{recipe['reason']}</p>
                 <p class="metric-line">
                     {recipe['cook_time_minutes']} 分钟 ｜ {recipe['budget_level']} ｜ {recipe['difficulty']}难度
                 </p>
                 <p><strong>主要食材：</strong>{recipe['ingredients']}</p>
-                <p>{recipe['description']}</p>
+                <p class="recipe-description">{recipe['description']}</p>
             </div>
             """,
             unsafe_allow_html=True,
         )
-        col1, col2, col3 = st.columns([0.95, 0.95, 1.1])
-        if col1.button(f"就吃这个", key=f"{key_prefix}_pick_{recipe['id']}", use_container_width=True):
-            record_action(st.session_state.user["id"], recipe["id"], "favorite")
-            st.success(f"已帮你记住你喜欢 {recipe['name']}。")
-        if col2.button(f"先收藏", key=f"{key_prefix}_favorite_{recipe['id']}", use_container_width=True):
-            record_action(st.session_state.user["id"], recipe["id"], "favorite")
-            st.success(f"已收藏 {recipe['name']}。")
-        if col3.button(f"不太像我想吃的", key=f"{key_prefix}_skip_{recipe['id']}", use_container_width=True):
-            record_action(st.session_state.user["id"], recipe["id"], "skip")
-            st.info(f"已记下你这次不太想吃 {recipe['name']}。")
+        with st.container(key=f"recipe_actions_{key_prefix}_{recipe['id']}"):
+            col1, col2, col3 = st.columns([0.95, 0.95, 1.1])
+            if col1.button("就吃这个", key=f"{key_prefix}_pick_{recipe['id']}", use_container_width=True):
+                if not is_favorite:
+                    record_action(user_id, recipe["id"], "favorite")
+                st.success(f"已帮你记住你喜欢 {recipe['name']}。")
+            favorite_label = "取消收藏" if is_favorite else "先收藏"
+            if col2.button(favorite_label, key=f"{key_prefix}_favorite_{recipe['id']}", use_container_width=True):
+                if is_favorite:
+                    remove_favorite_recipe(user_id, recipe["id"])
+                else:
+                    record_action(user_id, recipe["id"], "favorite")
+                st.rerun()
+            if col3.button("不太像我想吃的", key=f"{key_prefix}_skip_{recipe['id']}", use_container_width=True):
+                record_action(user_id, recipe["id"], "skip")
+                st.info(f"已记下你这次不太想吃 {recipe['name']}。")
 
 
 def render_empty_recipe_state() -> None:
@@ -4406,8 +4667,9 @@ def render_seasonal_page(preferences: dict, preview_mode: bool = False) -> None:
         )
 
     background_image = resolve_image_source(config["image_path"])
+    background_position = config.get("background_position", "center")
     background_style = (
-        f"background-image: url('{background_image}');"
+        f"background-image: url('{background_image}'); background-position: {background_position};"
         if background_image
         else "background: linear-gradient(135deg, rgba(253, 239, 213, 0.96), rgba(201, 153, 104, 0.78));"
     )
