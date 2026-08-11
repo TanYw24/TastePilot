@@ -202,7 +202,9 @@ def _base_parse(user_text: str) -> dict:
             "丰盛": "高预算",
         },
         "cooking_time_limit": {
+            "10分钟": "15 分钟内",
             "10 分钟": "15 分钟内",
+            "15分钟": "15 分钟内",
             "15 分钟": "15 分钟内",
             "快一点": "15 分钟内",
             "快点": "15 分钟内",
@@ -210,8 +212,11 @@ def _base_parse(user_text: str) -> dict:
             "别太久": "30 分钟内",
             "不想等太久": "30 分钟内",
             "半小时": "30 分钟内",
+            "30分钟": "30 分钟内",
             "30 分钟": "30 分钟内",
+            "45分钟": "45 分钟内",
             "45 分钟": "45 分钟内",
+            "1小时": "60 分钟内",
             "1 小时": "60 分钟内",
         },
         "vegetarian_preference": {
@@ -415,8 +420,8 @@ def analyze_dining_request(user_text: str) -> dict:
         "台式风味": ["台式", "台餐"],
         "拉美风味": ["墨西哥", "拉美"],
         "轻食早午餐": ["轻食", "早午餐", "brunch"],
-        "甜品烘焙": ["甜品", "烘焙", "西点"],
-        "饮品特调": ["饮品", "饮料"],
+        "甜品烘焙": ["烘焙", "西点"],
+        "饮品特调": ["特调", "特调饮品"],
     }
     main_type_keyword_map = {
         "正餐主食": ["主食", "吃饭", "饱腹", "顶饱"],
@@ -519,8 +524,11 @@ def analyze_dining_request(user_text: str) -> dict:
         intent_tags.extend(["仪式感", "精致"])
         result["recognized_hints"].append("偏精致")
 
-    if _has_positive_keyword(text, "不腻") or _has_positive_keyword(text, "别太腻"):
+    if any(marker in text for marker in ["不腻", "别太腻", "不要太腻", "不要腻"]):
         intent_tags.extend(["清爽", "轻负担"])
+        result["mood_search_tags"] = list(
+            dict.fromkeys(result.get("mood_search_tags", []) + ["清爽", "轻负担"])
+        )
 
     if (
         _has_positive_keyword(text, "有满足感")

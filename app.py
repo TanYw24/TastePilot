@@ -48,20 +48,24 @@ YUSHUI_CARD_PATH = ASSET_DIR / "yushui-card.png"
 JINGZHE_CARD_PATH = ASSET_DIR / "jingzhe-card.png"
 CHUNFEN_CARD_PATH = ASSET_DIR / "chunfen-card.png"
 QINGMING_CARD_PATH = ASSET_DIR / "qingming-card.png"
+GUYU_CARD_PATH = ASSET_DIR / "guyu-card.png"
 LIXIA_CARD_PATH = ASSET_DIR / "lixia-card.png"
 XIAOMAN_CARD_PATH = ASSET_DIR / "xiaoman-card.png"
 MANGZHONG_CARD_PATH = ASSET_DIR / "mangzhong-card.png"
 XIAZHI_CARD_PATH = ASSET_DIR / "xiazhi-card.png"
 XIAOSHU_CARD_PATH = ASSET_DIR / "xiaoshu-card.png"
+DASHU_CARD_PATH = ASSET_DIR / "dashu-card.png"
 LIDONG_CARD_PATH = ASSET_DIR / "lidong-card.png"
 CHUSHU_CARD_PATH = ASSET_DIR / "chushu-card.png"
 BAILU_CARD_PATH = ASSET_DIR / "bailu-card.png"
 QIUFEN_CARD_PATH = ASSET_DIR / "qiufen-card.png"
 HANLU_CARD_PATH = ASSET_DIR / "hanlu-card.png"
+SHUANGJIANG_CARD_PATH = ASSET_DIR / "shuangjiang-card.png"
 XIAOXUE_CARD_PATH = ASSET_DIR / "xiaoxue-card.png"
 DAXUE_CARD_PATH = ASSET_DIR / "daxue-card.png"
 DONGZHI_CARD_PATH = ASSET_DIR / "dongzhi-card.png"
 XIAOHAN_CARD_PATH = ASSET_DIR / "xiaohan-card.png"
+DAHAN_CARD_PATH = ASSET_DIR / "dahan-card.png"
 LIQIU_SCENIC_BG_URL = "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1800&q=80"
 LICHUN_CARD_BG_URL = "https://images.unsplash.com/photo-1523978591478-c753949ff840?auto=format&fit=crop&w=1400&q=80"
 LIXIA_CARD_BG_URL = "https://images.unsplash.com/photo-1467453678174-768ec283a940?auto=format&fit=crop&w=1400&q=80"
@@ -2149,6 +2153,24 @@ SEASONAL_PAGE_CONFIG = {
         "main_types": ["正餐主食", "正餐菜品", "甜品", "饮品"],
         "scene_note": "更适合暮春草木正青时，那种想吃得清鲜、软糯又带一点新绿香气的胃口。",
     },
+    "谷雨": {
+        "start_md": (4, 20),
+        "title": "谷雨时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": GUYU_CARD_PATH,
+        "page_background_url": LICHUN_SCENIC_BG_URL,
+        "card_subtitle": "谷雨更适合从春茶、嫩芽与清鲜河味里找灵感。龙井虾仁、香椿豆腐和春笋，把春天最后一段鲜味留在桌上。",
+        "intro": "谷雨之后，春茶新采，香椿与嫩笋也正鲜。我们从龙井、虾仁、嫩豆腐和枇杷里，挑一批清鲜、带茶香又不过分厚重的暮春味道。",
+        "seasonal_tags": ["谷雨", "春季时令", "雨生百谷"],
+        "display_tags": ["清鲜", "茶香", "龙井", "香椿", "春笋"],
+        "display_tag_groups": {
+            "时令食材": ["龙井", "香椿", "春笋"],
+            "适合口感": ["清鲜", "茶香"],
+        },
+        "card_tags": ["龙井虾仁", "香椿豆腐", "春茶饭", "枇杷饮"],
+        "main_types": ["正餐主食", "正餐菜品", "轻食早午餐", "甜品", "饮品"],
+        "scene_note": "更适合春天将尽、雨润百谷时，那种想吃得清鲜、轻盈又带一点新茶香的胃口。",
+    },
     "立夏": {
         "start_md": (5, 5),
         "title": "立夏时令推荐",
@@ -2238,6 +2260,24 @@ SEASONAL_PAGE_CONFIG = {
         "card_tags": ["绿豆莲子羹", "冬瓜", "荷叶", "薄荷饮"],
         "main_types": ["正餐主食", "正餐菜品", "甜品", "饮品"],
         "scene_note": "更适合暑气刚起、身体还在适应热意时，那种想吃得清凉、轻盈又有一点甜润的胃口。",
+    },
+    "大暑": {
+        "start_md": (7, 22),
+        "title": "大暑时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": DASHU_CARD_PATH,
+        "page_background_url": LIXIA_SCENIC_BG_URL,
+        "card_subtitle": "大暑更适合从清汤、水润瓜果和酸甜里找灵感。冬瓜老鸭汤、西瓜冰粉与酸梅饮，把盛夏最热的一段吃得舒服些。",
+        "intro": "大暑到了，热意走到一年里最盛的时候，胃口更需要清爽与补水。我们从冬瓜、鸭肉、西瓜和乌梅里，挑一批清凉却有饱足感的盛夏味道。",
+        "seasonal_tags": ["大暑", "夏季时令", "盛夏消暑"],
+        "display_tags": ["消暑", "水润", "冬瓜", "鸭肉", "西瓜"],
+        "display_tag_groups": {
+            "时令食材": ["冬瓜", "鸭肉", "西瓜"],
+            "适合口感": ["清爽", "水润"],
+        },
+        "card_tags": ["冬瓜老鸭汤", "西瓜冰粉", "荷香糯米鸡", "酸梅饮"],
+        "main_types": ["正餐主食", "正餐菜品", "甜品", "饮品"],
+        "scene_note": "更适合暑热最盛、胃口容易发懒时，那种想吃得水润、清爽又不失饱足感的节奏。",
     },
     "立秋": {
         "start_md": (8, 7),
@@ -2329,6 +2369,24 @@ SEASONAL_PAGE_CONFIG = {
         "main_types": ["正餐主食", "正餐菜品", "甜品", "饮品"],
         "scene_note": "更适合深秋凉意变清晰时，那种想吃得温润、醇香又不过分厚重的胃口。",
     },
+    "霜降": {
+        "start_md": (10, 23),
+        "title": "霜降时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": SHUANGJIANG_CARD_PATH,
+        "page_background_url": LIQIU_SCENIC_BG_URL,
+        "card_subtitle": "霜降更适合从柿子的甜、根茎与热煲里找灵感。牛腩萝卜煲、柿香糯米饼和板栗饭，把晚秋吃得更扎实。",
+        "intro": "霜降之后，晚秋的凉意逐渐贴近冬天，饮食也适合更温暖扎实。我们从柿子、白萝卜、山药和板栗里，挑一批甜润又暖胃的味道。",
+        "seasonal_tags": ["霜降", "秋季时令", "晚秋暖食"],
+        "display_tags": ["甜润", "暖胃", "柿子", "白萝卜", "板栗"],
+        "display_tag_groups": {
+            "时令食材": ["柿子", "白萝卜", "板栗"],
+            "适合口感": ["甜润", "暖胃"],
+        },
+        "card_tags": ["牛腩萝卜煲", "柿香糯米饼", "山药板栗饭", "秋梨饮"],
+        "main_types": ["正餐主食", "正餐菜品", "甜品", "饮品"],
+        "scene_note": "更适合霜意渐重、秋冬交界时，那种想吃得温暖、甜润又更有饱足感的胃口。",
+    },
     "立冬": {
         "start_md": (11, 7),
         "title": "立冬时令推荐",
@@ -2419,6 +2477,24 @@ SEASONAL_PAGE_CONFIG = {
         "main_types": ["正餐主食", "正餐菜品", "甜品", "饮品"],
         "scene_note": "更适合隆冬寒意正深时，那种想吃得热乎、扎实又能慢慢暖起来的胃口。",
     },
+    "大寒": {
+        "start_md": (1, 20),
+        "title": "大寒时令推荐",
+        "kicker": "Solar Term Selection",
+        "image_path": DAHAN_CARD_PATH,
+        "page_background_url": LIDONG_SCENIC_BG_URL,
+        "card_subtitle": "大寒更适合从糯米、热锅和年味里找灵感。八宝饭、山药羊肉锅与煎年糕，为二十四节气收一个暖融融的尾。",
+        "intro": "大寒到了，一年的节气也走到最后一站，饮食适合热乎、扎实又带一点团聚感。我们从糯米、红枣、年糕和羊肉里，挑一批暖身又有年味的选择。",
+        "seasonal_tags": ["大寒", "冬季时令", "岁末暖食"],
+        "display_tags": ["糯香", "温补", "八宝饭", "年糕", "羊肉"],
+        "display_tag_groups": {
+            "时令食物": ["八宝饭", "年糕", "羊肉锅"],
+            "适合口感": ["糯香", "温补"],
+        },
+        "card_tags": ["八宝饭", "山药羊肉锅", "煎年糕", "红枣核桃露"],
+        "main_types": ["正餐主食", "正餐菜品", "甜品", "饮品"],
+        "scene_note": "更适合一年最冷、也最接近新岁的时候，吃一顿热乎、糯香又有团聚感的饭。",
+    },
 }
 
 INSPIRATION_CARD_SCHEDULE = sorted(
@@ -2440,6 +2516,20 @@ def get_current_seasonal_term_name(now: datetime | None = None) -> str:
         else:
             break
     return active_term
+
+
+def get_current_hidden_time_slot(now: datetime | None = None) -> str:
+    current_dt = now or datetime.now(ZoneInfo("Asia/Shanghai"))
+    hour = current_dt.hour
+    if 5 <= hour < 11:
+        return "早餐"
+    if 11 <= hour < 14:
+        return "午餐"
+    if 14 <= hour < 17:
+        return "下午茶"
+    if 17 <= hour < 22:
+        return "晚餐"
+    return "夜宵"
 
 
 SKILL_APPEND_TEXT = {
@@ -4061,6 +4151,9 @@ def build_query_from_prompt(preferences: dict, prompt_override: str | None = Non
         "mood_detected": None if has_main_type_conflict else parsed.get("mood_detected"),
         "main_type_conflict": has_main_type_conflict,
         "conflicting_main_types": conflicting_main_types,
+        "soften_seasonal_bias": True,
+        "implicit_current_solar_term": get_current_seasonal_term_name(),
+        "implicit_time_slot": get_current_hidden_time_slot(),
     }
     return query, parsed
 
@@ -4116,6 +4209,7 @@ def recipe_matches_required_home_intent(recipe: dict, query: dict) -> bool:
         "香辣": {"香辣", "辣", "辣味", "重口", "川菜", "湘菜"},
         "清淡": {"清淡", "清爽", "轻负担"},
         "酸甜": {"酸甜", "酸口", "果香"},
+        "甜香": {"甜香", "奶香", "酸甜", "甜口", "甜品"},
         "鲜香": {"鲜香", "鲜味"},
         "奶香": {"奶香"},
     }
@@ -4335,6 +4429,9 @@ def run_seasonal_recommendation(preferences: dict, term_name: str, replace_mode:
         "mood_detected": None,
         "main_type_conflict": False,
         "conflicting_main_types": [],
+        "soften_seasonal_bias": False,
+        "implicit_current_solar_term": term_name,
+        "implicit_time_slot": get_current_hidden_time_slot(),
     }
     recommendations = recommend_recipes(
         query=query,

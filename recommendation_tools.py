@@ -180,6 +180,11 @@ def get_recipe_search_tags(recipe: dict) -> list[str]:
     if regional_cuisine:
         extra_tags.append(regional_cuisine)
     extra_tags.extend(get_recipe_seasonal_terms(recipe))
+    semantic_text = f"{recipe.get('name', '')} {recipe.get('description', '')}"
+    if any(keyword in semantic_text for keyword in ["咖啡", "美式", "提神", "犯困", "打起精神", "清醒"]):
+        extra_tags.extend(["提神", "咖啡搭子"])
+    if any(keyword in semantic_text for keyword in ["柠檬", "柚", "百香果", "葡萄", "果香"]):
+        extra_tags.append("果香")
     return list(
         dict.fromkeys(
             get_recipe_feature_tags(recipe)
@@ -491,6 +496,8 @@ def _matches_flavor_intent(recipe: dict, flavor: str) -> bool:
     recipe_flavors = get_recipe_profile_tags(recipe)
     if flavor in recipe_flavors:
         return True
+    if flavor == "甜香" and {"奶香", "酸甜"}.intersection(recipe_flavors):
+        return True
     if flavor == "香辣" and int(recipe.get("is_spicy") or 0) == 1:
         return True
     return False
@@ -507,6 +514,8 @@ def _score_recipe(recipe: dict, request: dict, favorite_counts: dict, skip_count
     recipe_seasonal_terms = get_recipe_seasonal_terms(recipe)
     search_tags = get_recipe_search_tags(recipe)
     solar_terms = request.get("solar_terms", [])
+    implicit_solar_term = request.get("implicit_current_solar_term")
+    implicit_time_slot = request.get("implicit_time_slot")
 
     flavor_overlap = [tag for tag in request["favorite_flavors"] if tag in recipe_flavors]
     if flavor_overlap:
@@ -558,6 +567,19 @@ def _score_recipe(recipe: dict, request: dict, favorite_counts: dict, skip_count
         if term_overlap:
             score += 34
             reasons.append(f"正好对应 {term_overlap[0]} 这段时令和习俗")
+    elif implicit_solar_term and implicit_solar_term in recipe_seasonal_terms:
+        score += 14
+
+    if implicit_time_slot:
+        recipe_slots = get_recipe_time_slots(recipe)
+        if implicit_time_slot in recipe_slots:
+            score += 16
+        else:
+            slot_pref = _implicit_time_slot_preference(implicit_time_slot)
+            if recipe.get("main_type") in slot_pref["main_types"]:
+                score += 8
+            if recipe.get("sub_type") in slot_pref["sub_types"]:
+                score += 5
 
     preferred_course_types = request.get("preferred_course_types", [])
     avoid_course_types = request.get("avoid_course_types", [])
@@ -640,6 +662,57 @@ def _diversified_pick(ranked: list[dict], limit: int) -> list[dict]:
     return picked
 
 
+def _implicit_time_slot_preference(slot: str) -> dict[str, set[str]]:
+    mapping = {
+        "早餐": {
+            "main_types": {"轻食早午餐", "正餐主食", "甜品", "饮品"},
+            "sub_types": {"早餐碗类", "三明治贝果类", "吐司卷饼类", "轻主食类", "饭类", "面类", "粉类", "饼类"},
+        },
+        "午餐": {
+            "main_types": {"正餐主食", "正餐菜品", "轻食早午餐"},
+            "sub_types": {"饭类", "面类", "粉类", "饼类", "菜肴类", "锅汤类", "轻主食类"},
+        },
+        "下午茶": {
+            "main_types": {"轻食早午餐", "甜品", "饮品"},
+            "sub_types": {"烘焙点心类", "蛋糕类", "布丁冻品类", "中式甜品类", "咖啡类", "茶饮类", "果饮类", "吐司卷饼类", "三明治贝果类"},
+        },
+        "晚餐": {
+            "main_types": {"正餐主食", "正餐菜品"},
+            "sub_types": {"饭类", "面类", "粉类", "饼类", "菜肴类", "锅汤类"},
+        },
+        "夜宵": {
+            "main_types": {"正餐主食", "正餐菜品", "饮品", "甜品"},
+            "sub_types": {"面类", "粉类", "锅汤类", "热饮类", "中式甜品类"},
+        },
+    }
+    return mapping.get(slot, {"main_types": set(), "sub_types": set()})
+
+
+def _rebalance_home_seasonal_mix(
+    ranked: list[dict],
+    limit: int,
+    max_seasonal: int = 1,
+) -> list[dict]:
+    if len(ranked) <= limit:
+        return ranked
+
+    seasonal = [item for item in ranked if get_recipe_seasonal_terms(item)]
+    nonseasonal = [item for item in ranked if not get_recipe_seasonal_terms(item)]
+    if not seasonal or not nonseasonal:
+        return ranked
+
+    seasonal_cap = min(max_seasonal, limit - 1)
+    picked = []
+    picked.extend(nonseasonal[: max(0, limit - seasonal_cap)])
+    picked.extend(seasonal[:seasonal_cap])
+
+    if len(picked) < limit:
+        remaining = [item for item in ranked if item["id"] not in {picked_item["id"] for picked_item in picked}]
+        picked.extend(remaining[: limit - len(picked)])
+
+    return sorted(picked, key=lambda item: item["score"], reverse=True)
+
+
 def recommend_recipes(
     query: dict,
     preferences: dict,
@@ -683,6 +756,7 @@ def recommend_recipes(
     cuisine_groups = _normalize_cuisine_filters(request.get("cuisine_groups", []))
     required_flavors = request.get("required_flavors", [])
     current_input_flavors = request.get("current_input_flavors", [])
+    soften_seasonal_bias = bool(request.get("soften_seasonal_bias"))
 
     # Recompute taxonomy fields at recommendation time so stale stored labels
     # do not leak desserts into drinks or similar cross-bucket results.
@@ -761,7 +835,7 @@ def recommend_recipes(
         mood_tagged = recipes[recipes["mood_overlap_count"] >= 1]
         if len(strong_mood_tagged) >= max(limit, 3):
             recipes = strong_mood_tagged.copy()
-        if len(mood_tagged) >= max(limit, 3):
+        elif len(mood_tagged) >= max(limit, 3):
             recipes = mood_tagged.copy()
 
     if intent_tags:
@@ -781,7 +855,11 @@ def recommend_recipes(
     if avoid_course_types:
         filtered = recipes[
             recipes["course_types"].apply(
-                lambda course_types: not any(course_type in course_types for course_type in avoid_course_types)
+                lambda course_types: (
+                    bool(preferred_course_types)
+                    and any(course_type in course_types for course_type in preferred_course_types)
+                )
+                or not any(course_type in course_types for course_type in avoid_course_types)
             )
         ]
         if not filtered.empty:
@@ -808,6 +886,8 @@ def recommend_recipes(
         profile_bonus, profile_reasons = _profile_bonus(recipe, request, profile)
         score += profile_bonus
         reasons.extend(profile_reasons)
+        if soften_seasonal_bias and not solar_terms and get_recipe_seasonal_terms(recipe):
+            score -= 8
         if recipe["id"] in favorite_recipe_ids:
             score += 8
         score += random.uniform(0, 8)
@@ -817,6 +897,8 @@ def recommend_recipes(
         ranked.append(recipe)
 
     ranked.sort(key=lambda item: item["score"], reverse=True)
+    if soften_seasonal_bias and not solar_terms:
+        ranked = _rebalance_home_seasonal_mix(ranked, max(limit * 3, 8))
     picked = _diversified_pick(ranked, limit)
 
     for recipe in picked:
